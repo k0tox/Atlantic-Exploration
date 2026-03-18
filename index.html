@@ -31,20 +31,64 @@
     <div id="catchAlert">!</div>
   </div>
 
-  <div id="radarContainer">
-    <canvas id="radarCanvas" width="140" height="140"></canvas>
+  <div id="fishRadar">
+    <div id="radarArrow">▲</div>
+    <div id="radarLabel">No fish detected</div>
   </div>
 
-  <!-- Simple prototype GUIs -->
-  <div id="panelRod" class="gui-panel">Rod details go here.</div>
-  <div id="panelToolBag" class="gui-panel">Tool bag contents.</div>
-  <div id="panelBaitBag" class="gui-panel">Bait bag contents.</div>
-  <div id="panelBestiary" class="gui-panel">Bestiary entries.</div>
-  <div id="panelQuest" class="gui-panel">Quest log.</div>
-  <div id="panelTotems" class="gui-panel">Totems and weather events.</div>
-  <div id="panelPotions" class="gui-panel">Potions list.</div>
-  <div id="panelRelic" class="gui-panel">Relic key info.</div>
-  <div id="panelUtility" class="gui-panel">Utility items.</div>
+  <div id="panelRod" class="gui-panel">
+    <h2>Rods</h2>
+    <div class="gui-panel-body" id="rodList"></div>
+  </div>
+
+  <div id="panelToolBag" class="gui-panel">
+    <h2>Tool Bag</h2>
+    <div class="gui-panel-body" id="toolList"></div>
+  </div>
+
+  <div id="panelBaitBag" class="gui-panel">
+    <h2>Bait Bag</h2>
+    <div class="gui-panel-body" id="baitList"></div>
+  </div>
+
+  <div id="panelBestiary" class="gui-panel">
+    <h2>Bestiary</h2>
+    <div id="bestiaryTabs">
+      <button data-tab="fish">Fish</button>
+      <button data-tab="rods">Rods</button>
+      <button data-tab="islands">Islands</button>
+    </div>
+    <div id="bestiaryContent">
+      <div id="bestiaryFish" class="bestiary-section"></div>
+      <div id="bestiaryRods" class="bestiary-section"></div>
+      <div id="bestiaryIslands" class="bestiary-section"></div>
+    </div>
+  </div>
+
+  <div id="panelQuest" class="gui-panel">
+    <h2>Quests</h2>
+    <div class="gui-panel-body" id="questList"></div>
+  </div>
+
+  <div id="panelTotems" class="gui-panel">
+    <h2>Totems</h2>
+    <div class="gui-panel-body" id="totemList"></div>
+  </div>
+
+  <div id="panelPotions" class="gui-panel">
+    <h2>Potions</h2>
+    <div class="gui-panel-body" id="potionList"></div>
+  </div>
+
+  <div id="panelRelic" class="gui-panel">
+    <h2>Relic Key</h2>
+    <div class="gui-panel-body" id="relicInfo"></div>
+  </div>
+
+  <div id="panelUtility" class="gui-panel">
+    <h2>Utility</h2>
+    <div class="gui-panel-body" id="utilityList"></div>
+  </div>
 
   <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
   <script src="main.js"></script>
