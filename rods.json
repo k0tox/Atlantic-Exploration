@@ -1,0 +1,124 @@
+{
+  "rods": [
+    {
+      "id": "driftwood",
+      "name": "Driftwood Rod",
+      "rarity": "common",
+      "stats": {
+        "resilience": 1,
+        "control": 1,
+        "luck": 0,
+        "lureSpeed": 1,
+        "progressSpeed": 1,
+        "maxWeight": 10
+      },
+      "hazardResist": [],
+      "variantBonus": 0
+    },
+    {
+      "id": "reedline",
+      "name": "Reedline Rod",
+      "rarity": "uncommon",
+      "stats": {
+        "resilience": 2,
+        "control": 2,
+        "luck": 1,
+        "lureSpeed": 2,
+        "progressSpeed": 2,
+        "maxWeight": 25
+      },
+      "hazardResist": [],
+      "variantBonus": 0.002
+    },
+    {
+      "id": "ironwave",
+      "name": "Ironwave Rod",
+      "rarity": "rare",
+      "stats": {
+        "resilience": 3,
+        "control": 3,
+        "luck": 2,
+        "lureSpeed": 2,
+        "progressSpeed": 3,
+        "maxWeight": 45
+      },
+      "hazardResist": [],
+      "variantBonus": 0.004
+    },
+    {
+      "id": "prism",
+      "name": "Prism Rod",
+      "rarity": "epic",
+      "stats": {
+        "resilience": 4,
+        "control": 4,
+        "luck": 3,
+        "lureSpeed": 3,
+        "progressSpeed": 3,
+        "maxWeight": 80
+      },
+      "hazardResist": [],
+      "variantBonus": 0.01
+    },
+    {
+      "id": "aetherline",
+      "name": "Aetherline Rod",
+      "rarity": "legendary",
+      "stats": {
+        "resilience": 5,
+        "control": 5,
+        "luck": 4,
+        "lureSpeed": 4,
+        "progressSpeed": 4,
+        "maxWeight": 150
+      },
+      "hazardResist": ["abyss"],
+      "variantBonus": 0.02
+    },
+    {
+      "id": "ashborn",
+      "name": "Ashborn Rod",
+      "rarity": "legendary",
+      "stats": {
+        "resilience": 5,
+        "control": 4,
+        "luck": 3,
+        "lureSpeed": 4,
+        "progressSpeed": 4,
+        "maxWeight": 160
+      },
+      "hazardResist": ["lava"],
+      "variantBonus": 0.015
+    },
+    {
+      "id": "mirebane",
+      "name": "Mirebane Rod",
+      "rarity": "legendary",
+      "stats": {
+        "resilience": 5,
+        "control": 4,
+        "luck": 3,
+        "lureSpeed": 4,
+        "progressSpeed": 4,
+        "maxWeight": 160
+      },
+      "hazardResist": ["toxic"],
+      "variantBonus": 0.015
+    },
+    {
+      "id": "nullcurrent",
+      "name": "Nullcurrent Rod",
+      "rarity": "exotic",
+      "stats": {
+        "resilience": 6,
+        "control": 6,
+        "luck": 6,
+        "lureSpeed": 5,
+        "progressSpeed": 5,
+        "maxWeight": 999
+      },
+      "hazardResist": ["lava", "toxic", "abyss", "rift"],
+      "variantBonus": 0.05
+    }
+  ]
+}
