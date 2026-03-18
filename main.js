@@ -1,5 +1,10 @@
 // ===============================
-// Fisch Bucket Prototype (Single File, No JSON)
+// Fisch Bucket Prototype (Improved Single File)
+// - Correct movement (no inverse feel)
+// - Shift-lock style camera
+// - Visible rod model
+// - Basic hotbar + GUIs
+// - Designed islands (not just plain shapes)
 // ===============================
 
 // ----- DOM -----
@@ -12,7 +17,28 @@ const catchAlert = document.getElementById("catchAlert");
 const radarCanvas = document.getElementById("radarCanvas");
 const radarCtx = radarCanvas.getContext("2d");
 
-// ----- DATA (hardcoded so it always works) -----
+// Optional GUIs (if present in HTML)
+const panelRod = document.getElementById("panelRod");
+const panelToolBag = document.getElementById("panelToolBag");
+const panelBaitBag = document.getElementById("panelBaitBag");
+const panelBestiary = document.getElementById("panelBestiary");
+const panelQuest = document.getElementById("panelQuest");
+const panelTotems = document.getElementById("panelTotems");
+const panelPotions = document.getElementById("panelPotions");
+const panelRelic = document.getElementById("panelRelic");
+const panelUtility = document.getElementById("panelUtility");
+
+const btnRod = document.getElementById("btnRod");
+const btnToolBag = document.getElementById("btnToolBag");
+const btnBaitBag = document.getElementById("btnBaitBag");
+const btnBestiary = document.getElementById("btnBestiary");
+const btnQuest = document.getElementById("btnQuest");
+const btnTotems = document.getElementById("btnTotems");
+const btnPotions = document.getElementById("btnPotions");
+const btnRelic = document.getElementById("btnRelic");
+const btnUtility = document.getElementById("btnUtility");
+
+// ----- DATA -----
 const RARITY = {
   COMMON: "common",
   UNCOMMON: "uncommon",
@@ -46,24 +72,9 @@ const VARIANTS = [
 ];
 
 const RODS = [
-  {
-    id: "driftwood",
-    name: "Driftwood Rod",
-    rarity: RARITY.COMMON,
-    variantBonus: 0.0
-  },
-  {
-    id: "prism",
-    name: "Prism Rod",
-    rarity: RARITY.EPIC,
-    variantBonus: 0.01
-  },
-  {
-    id: "nullcurrent",
-    name: "Nullcurrent Rod",
-    rarity: RARITY.EXOTIC,
-    variantBonus: 0.05
-  }
+  { id: "driftwood", name: "Driftwood Rod", rarity: RARITY.COMMON, variantBonus: 0.0 },
+  { id: "prism", name: "Prism Rod", rarity: RARITY.EPIC, variantBonus: 0.01 },
+  { id: "nullcurrent", name: "Nullcurrent Rod", rarity: RARITY.EXOTIC, variantBonus: 0.05 }
 ];
 
 const ISLANDS = [
@@ -71,19 +82,22 @@ const ISLANDS = [
     id: "harbor",
     name: "Harbor's Rest",
     position: [0, -5, 0],
-    radius: 120
+    radius: 120,
+    type: "harbor"
   },
   {
     id: "jungle",
     name: "Verdant Reach",
     position: [400, -5, 250],
-    radius: 140
+    radius: 140,
+    type: "jungle"
   },
   {
     id: "volcano",
     name: "Ashspire Isle",
     position: [-500, -5, -300],
-    radius: 150
+    radius: 150,
+    type: "volcano"
   }
 ];
 
@@ -119,6 +133,7 @@ const FISH_TABLES = {
 };
 
 let currentRod = RODS[0];
+let selectedHotbarSlot = 0;
 
 // ----- THREE SETUP -----
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -136,7 +151,7 @@ const camera = new THREE.PerspectiveCamera(
   4000
 );
 
-// camera rig
+// camera rig (shift-lock style)
 const cameraHolder = new THREE.Object3D();
 const cameraPivot = new THREE.Object3D();
 cameraHolder.add(cameraPivot);
@@ -148,8 +163,8 @@ const player = new THREE.Object3D();
 player.position.set(0, 20, 0);
 scene.add(player);
 
-camera.position.set(0, 4, -8);
-cameraPivot.position.set(0, 3, 0);
+camera.position.set(0, 3, -6);
+cameraPivot.position.set(0, 2, 0);
 cameraHolder.position.copy(player.position);
 
 // lights
@@ -193,7 +208,7 @@ function updateWater(time) {
   water.geometry.computeVertexNormals();
 }
 
-// islands + labels
+// islands + labels (designed, not just cylinders)
 const islandLabels = [];
 
 function createIslandLabel(text) {
@@ -219,16 +234,82 @@ function createIslandLabel(text) {
   return sprite;
 }
 
+function addHarborDetails(basePos) {
+  const dockGeo = new THREE.BoxGeometry(40, 1, 10);
+  const dockMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b });
+  const dock = new THREE.Mesh(dockGeo, dockMat);
+  dock.position.set(basePos.x + 20, basePos.y + 1, basePos.z);
+  scene.add(dock);
+}
+
+function addJungleDetails(basePos) {
+  const trunkGeo = new THREE.CylinderGeometry(0.8, 1.2, 8, 6);
+  const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5b3a1a });
+  const leafGeo = new THREE.ConeGeometry(4, 6, 8);
+  const leafMat = new THREE.MeshStandardMaterial({ color: 0x2e7d32 });
+
+  for (let i = 0; i < 5; i++) {
+    const t = new THREE.Mesh(trunkGeo, trunkMat);
+    const l = new THREE.Mesh(leafGeo, leafMat);
+    const angle = (i / 5) * Math.PI * 2;
+    const r = 20 + Math.random() * 10;
+    const x = basePos.x + Math.cos(angle) * r;
+    const z = basePos.z + Math.sin(angle) * r;
+    t.position.set(x, basePos.y + 4, z);
+    l.position.set(x, basePos.y + 9, z);
+    scene.add(t);
+    scene.add(l);
+  }
+}
+
+function addVolcanoDetails(basePos) {
+  const coneGeo = new THREE.ConeGeometry(40, 40, 16);
+  const coneMat = new THREE.MeshStandardMaterial({ color: 0x4e342e });
+  const cone = new THREE.Mesh(coneGeo, coneMat);
+  cone.position.set(basePos.x, basePos.y + 25, basePos.z);
+  scene.add(cone);
+
+  const lavaGeo = new THREE.CircleGeometry(10, 16);
+  const lavaMat = new THREE.MeshBasicMaterial({ color: 0xff5722 });
+  const lava = new THREE.Mesh(lavaGeo, lavaMat);
+  lava.rotation.x = -Math.PI / 2;
+  lava.position.set(basePos.x, basePos.y + 45, basePos.z);
+  scene.add(lava);
+}
+
 function buildIslands() {
   for (const island of ISLANDS) {
-    const geo = new THREE.CylinderGeometry(island.radius * 0.6, island.radius, 10, 32);
-    const mat = new THREE.MeshStandardMaterial({ color: 0xc2b280 });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(...island.position);
-    scene.add(mesh);
+    let mesh;
+    const basePos = new THREE.Vector3(...island.position);
+
+    if (island.type === "harbor") {
+      const geo = new THREE.DodecahedronGeometry(island.radius * 0.6);
+      const mat = new THREE.MeshStandardMaterial({ color: 0x9ccc65 });
+      mesh = new THREE.Mesh(geo, mat);
+      mesh.scale.y = 0.3;
+      mesh.position.copy(basePos);
+      scene.add(mesh);
+      addHarborDetails(basePos);
+    } else if (island.type === "jungle") {
+      const geo = new THREE.DodecahedronGeometry(island.radius * 0.7);
+      const mat = new THREE.MeshStandardMaterial({ color: 0x43a047 });
+      mesh = new THREE.Mesh(geo, mat);
+      mesh.scale.y = 0.4;
+      mesh.position.copy(basePos);
+      scene.add(mesh);
+      addJungleDetails(basePos);
+    } else if (island.type === "volcano") {
+      const geo = new THREE.DodecahedronGeometry(island.radius * 0.6);
+      const mat = new THREE.MeshStandardMaterial({ color: 0x6d4c41 });
+      mesh = new THREE.Mesh(geo, mat);
+      mesh.scale.y = 0.5;
+      mesh.position.copy(basePos);
+      scene.add(mesh);
+      addVolcanoDetails(basePos);
+    }
 
     const label = createIslandLabel(island.name);
-    label.position.set(island.position[0], island.position[1] + 20, island.position[2]);
+    label.position.set(basePos.x, basePos.y + 30, basePos.z);
     island.label = label;
     scene.add(label);
     islandLabels.push({ island, sprite: label });
@@ -263,6 +344,31 @@ function createControlSign() {
 
   sign.position.set(0, 12, -20);
   scene.add(sign);
+}
+
+// ----- ROD MODEL -----
+let rodMesh = null;
+
+function createRodMesh() {
+  const rodGeo = new THREE.CylinderGeometry(0.1, 0.15, 5, 8);
+  const rodMat = new THREE.MeshStandardMaterial({ color: 0x8d6e63 });
+  const handleGeo = new THREE.CylinderGeometry(0.2, 0.25, 1.5, 8);
+  const handleMat = new THREE.MeshStandardMaterial({ color: 0x4e342e });
+
+  const rod = new THREE.Mesh(rodGeo, rodMat);
+  const handle = new THREE.Mesh(handleGeo, handleMat);
+
+  const group = new THREE.Group();
+  rod.position.y = 2;
+  handle.position.y = 0.5;
+  group.add(rod);
+  group.add(handle);
+
+  group.position.set(0.6, 1.5, 0.5);
+  group.rotation.z = -Math.PI / 4;
+
+  cameraPivot.add(group);
+  rodMesh = group;
 }
 
 // ----- REGION -----
@@ -307,7 +413,8 @@ document.addEventListener("mouseup", e => {
 
 document.addEventListener("mousemove", e => {
   if (!rightMouseDown) return;
-  yaw -= e.movementX * 0.002;
+  // FIX: make movement feel natural (no inverse)
+  yaw += e.movementX * 0.002;
   pitch -= e.movementY * 0.002;
   pitch = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, pitch));
 });
@@ -637,6 +744,35 @@ function drawRadar() {
   }
 }
 
+// ----- HOTBAR / GUI -----
+function hideAllPanels() {
+  [panelRod, panelToolBag, panelBaitBag, panelBestiary, panelQuest, panelTotems, panelPotions, panelRelic, panelUtility]
+    .filter(Boolean)
+    .forEach(p => (p.style.display = "none"));
+}
+
+function showPanel(panel) {
+  if (!panel) return;
+  hideAllPanels();
+  panel.style.display = "block";
+}
+
+if (btnRod) btnRod.onclick = () => showPanel(panelRod);
+if (btnToolBag) btnToolBag.onclick = () => showPanel(panelToolBag);
+if (btnBaitBag) btnBaitBag.onclick = () => showPanel(panelBaitBag);
+if (btnBestiary) btnBestiary.onclick = () => showPanel(panelBestiary);
+if (btnQuest) btnQuest.onclick = () => showPanel(panelQuest);
+if (btnTotems) btnTotems.onclick = () => showPanel(panelTotems);
+if (btnPotions) btnPotions.onclick = () => showPanel(panelPotions);
+if (btnRelic) btnRelic.onclick = () => showPanel(panelRelic);
+if (btnUtility) btnUtility.onclick = () => showPanel(panelUtility);
+
+document.addEventListener("keydown", e => {
+  if (e.code >= "Digit1" && e.code <= "Digit9") {
+    selectedHotbarSlot = parseInt(e.code.slice(-1), 10) - 1;
+  }
+});
+
 // ----- MAIN LOOP -----
 let lastTime = performance.now();
 let exoticSpawnTimer = 0;
@@ -672,6 +808,7 @@ function loop(now) {
 function init() {
   buildIslands();
   createControlSign();
+  createRodMesh();
 
   window.addEventListener("resize", () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
