@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Fisch Bucket Prototype</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+
+  <div id="hudTop">
+    <span id="hudRegion">Region: Harbor's Rest</span>
+    <span id="hudGPS">X: 0 | Y: 0 | Z: 0</span>
+    <span id="hudDepth">Depth: 0m</span>
+  </div>
+
+  <div id="hudCenterBanner"></div>
+
+  <div id="hudBottom">
+    <div id="hotbar">
+      <div class="hotbar-slot" data-slot="1">Rod</div>
+      <div class="hotbar-slot" data-slot="2">Tool Bag</div>
+      <div class="hotbar-slot" data-slot="3">Bait Bag</div>
+      <div class="hotbar-slot" data-slot="4">Bestiary</div>
+      <div class="hotbar-slot" data-slot="5">Quest Scroll</div>
+      <div class="hotbar-slot" data-slot="6">Totems</div>
+      <div class="hotbar-slot" data-slot="7">Potions</div>
+      <div class="hotbar-slot" data-slot="8">Relic Key</div>
+      <div class="hotbar-slot" data-slot="9">Utility</div>
+    </div>
+    <div id="catchAlert">!</div>
+  </div>
+
+  <div id="radarContainer">
+    <canvas id="radarCanvas" width="140" height="140"></canvas>
+  </div>
+
+  <div id="helpPanel">
+    <h3>Controls</h3>
+    <p>WASD / Arrows — Move</p>
+    <p>Right Click + Mouse — Rotate camera</p>
+    <p>E — Interact / Fish</p>
+    <p>Shift — Swim down (underwater)</p>
+    <p>Space — Jump / Swim up</p>
+  </div>
+
+  <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
