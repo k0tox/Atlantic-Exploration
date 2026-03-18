@@ -1,23 +1,18 @@
-// ===============================
-// Fisch Bucket Prototype (Improved Single File)
-// - Correct movement (no inverse feel)
-// - Shift-lock style camera
-// - Visible rod model
-// - Basic hotbar + GUIs
-// - Designed islands (not just plain shapes)
-// ===============================
+// =====================================================
+// Fisch Bucket Prototype - Expanded, Detailed Version
+// Better visuals, better gameplay, better design
+// =====================================================
 
-// ----- DOM -----
+// ----------------------
+// DOM references
+// ----------------------
 const canvas = document.getElementById("gameCanvas");
 const hudRegion = document.getElementById("hudRegion");
 const hudGPS = document.getElementById("hudGPS");
 const hudDepth = document.getElementById("hudDepth");
 const hudCenterBanner = document.getElementById("hudCenterBanner");
 const catchAlert = document.getElementById("catchAlert");
-const radarCanvas = document.getElementById("radarCanvas");
-const radarCtx = radarCanvas.getContext("2d");
 
-// Optional GUIs (if present in HTML)
 const panelRod = document.getElementById("panelRod");
 const panelToolBag = document.getElementById("panelToolBag");
 const panelBaitBag = document.getElementById("panelBaitBag");
@@ -38,7 +33,28 @@ const btnPotions = document.getElementById("btnPotions");
 const btnRelic = document.getElementById("btnRelic");
 const btnUtility = document.getElementById("btnUtility");
 
-// ----- DATA -----
+const hotbarSlots = Array.from(document.querySelectorAll(".hotbar-slot"));
+
+const radarArrow = document.getElementById("radarArrow");
+const radarLabel = document.getElementById("radarLabel");
+
+const rodList = document.getElementById("rodList");
+const baitList = document.getElementById("baitList");
+const toolList = document.getElementById("toolList");
+const questList = document.getElementById("questList");
+const totemList = document.getElementById("totemList");
+const potionList = document.getElementById("potionList");
+const relicInfo = document.getElementById("relicInfo");
+const utilityList = document.getElementById("utilityList");
+
+const bestiaryTabs = document.getElementById("bestiaryTabs");
+const bestiaryFish = document.getElementById("bestiaryFish");
+const bestiaryRods = document.getElementById("bestiaryRods");
+const bestiaryIslands = document.getElementById("bestiaryIslands");
+
+// ----------------------
+// Core data definitions
+// ----------------------
 const RARITY = {
   COMMON: "common",
   UNCOMMON: "uncommon",
@@ -71,12 +87,84 @@ const VARIANTS = [
   "frozen"
 ];
 
+// Rods expanded with more detail
 const RODS = [
-  { id: "driftwood", name: "Driftwood Rod", rarity: RARITY.COMMON, variantBonus: 0.0 },
-  { id: "prism", name: "Prism Rod", rarity: RARITY.EPIC, variantBonus: 0.01 },
-  { id: "nullcurrent", name: "Nullcurrent Rod", rarity: RARITY.EXOTIC, variantBonus: 0.05 }
+  {
+    id: "driftwood",
+    name: "Driftwood Rod",
+    rarity: RARITY.COMMON,
+    variantBonus: 0.0,
+    color: 0x8d6e63,
+    desc: "A simple rod made from washed-up driftwood. Reliable, but nothing special.",
+    control: "Basic control, no special effects."
+  },
+  {
+    id: "harborOak",
+    name: "Harbor Oak Rod",
+    rarity: RARITY.UNCOMMON,
+    variantBonus: 0.002,
+    color: 0x6d4c41,
+    desc: "Carved from old harbor oak. Slightly steadier bite timing.",
+    control: "Smoother bite window for common harbor fish."
+  },
+  {
+    id: "prism",
+    name: "Prism Rod",
+    rarity: RARITY.EPIC,
+    variantBonus: 0.01,
+    color: 0x9c27b0,
+    desc: "Refracts light beneath the waves, slightly increasing the chance of variant fish.",
+    control: "Subtle glow on rare bites."
+  },
+  {
+    id: "nullcurrent",
+    name: "Nullcurrent Rod",
+    rarity: RARITY.EXOTIC,
+    variantBonus: 0.05,
+    color: 0x00e5ff,
+    desc: "A rod that bends currents around it, greatly boosting variant encounters.",
+    control: "More stable bobber, higher variant chance."
+  }
 ];
 
+const BAITS = [
+  { id: "basic", name: "Basic Bait", rarity: RARITY.COMMON, desc: "Standard bait. Works anywhere, but nothing fancy." },
+  { id: "harborShrimp", name: "Harbor Shrimp", rarity: RARITY.UNCOMMON, desc: "Favored by harbor fish. Slightly boosts harbor catches." },
+  { id: "jungleGrub", name: "Jungle Grub", rarity: RARITY.UNCOMMON, desc: "Sticky jungle bait. Attracts jungle species." },
+  { id: "emberWorm", name: "Ember Worm", rarity: RARITY.RARE, desc: "Glows faintly. Volcano fish love it." }
+];
+
+const TOOLS = [
+  { id: "net", name: "Landing Net", desc: "Helps secure larger fish once hooked." },
+  { id: "scale", name: "Precision Scale", desc: "Measures fish weight for records." },
+  { id: "lineKit", name: "Line Repair Kit", desc: "Reduces chance of line snapping on big catches." }
+];
+
+const POTIONS = [
+  { id: "luck", name: "Potion of Luck", desc: "Temporarily increases rare fish chance." },
+  { id: "clarity", name: "Potion of Clarity", desc: "Highlights bite timing in the fishing minigame." },
+  { id: "depth", name: "Potion of Depthsense", desc: "Makes deep fish slightly easier to hook." }
+];
+
+const TOTEMS = [
+  { id: "storm", name: "Storm Totem", desc: "Summons rough seas, changing fish behavior." },
+  { id: "calm", name: "Calm Totem", desc: "Smooths the waters, easier fishing but fewer exotics." },
+  { id: "tide", name: "Tide Totem", desc: "Shifts currents, altering which fish appear." }
+];
+
+const UTILITIES = [
+  { id: "campfire", name: "Portable Campfire", desc: "A place to rest and cook fish." },
+  { id: "beacon", name: "Sea Beacon", desc: "Marks a location in the ocean." },
+  { id: "flare", name: "Signal Flare", desc: "Marks the sky above your position." }
+];
+
+const RELIC = {
+  id: "ancientKey",
+  name: "Ancient Relic Key",
+  desc: "Said to unlock a forgotten trench somewhere beyond the known islands."
+};
+
+// Islands with positions and types
 const ISLANDS = [
   {
     id: "harbor",
@@ -101,6 +189,7 @@ const ISLANDS = [
   }
 ];
 
+// Fish tables per region
 const FISH_TABLES = {
   harbor: [
     { name: "Harbor Minnow", rarity: RARITY.COMMON, depth: "surface" },
@@ -132,18 +221,33 @@ const FISH_TABLES = {
   ]
 };
 
+// Discovery tracking
+let discoveredIslands = new Set(["harbor"]);
+let discoveredFish = new Set();
+let discoveredRods = new Set(["driftwood"]);
+
+// Current rod and hotbar
 let currentRod = RODS[0];
 let selectedHotbarSlot = 0;
 
-// ----- THREE SETUP -----
+// ----------------------
+// Three.js setup
+// ----------------------
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setClearColor(0x0a0c18);
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x0a0c18, 0.002);
+scene.fog = new THREE.FogExp2(0x0a0c18, 0.0018);
 
+// Day-night cycle color targets
+const daySkyColor = new THREE.Color(0x87cefa);
+const nightSkyColor = new THREE.Color(0x02030a);
+const dayFogColor = new THREE.Color(0x0a1a2a);
+const nightFogColor = new THREE.Color(0x02030a);
+
+// Camera hierarchy
 const camera = new THREE.PerspectiveCamera(
   70,
   window.innerWidth / window.innerHeight,
@@ -151,36 +255,39 @@ const camera = new THREE.PerspectiveCamera(
   4000
 );
 
-// camera rig (shift-lock style)
 const cameraHolder = new THREE.Object3D();
 const cameraPivot = new THREE.Object3D();
 cameraHolder.add(cameraPivot);
 cameraPivot.add(camera);
 scene.add(cameraHolder);
 
-// player
+// Player object
 const player = new THREE.Object3D();
 player.position.set(0, 20, 0);
 scene.add(player);
 
+// Camera initial placement
 camera.position.set(0, 3, -6);
 cameraPivot.position.set(0, 2, 0);
 cameraHolder.position.copy(player.position);
 
-// lights
+// Lights
 const hemi = new THREE.HemisphereLight(0xbfd8ff, 0x0b1020, 0.8);
 scene.add(hemi);
 
-const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+const sun = new THREE.DirectionalLight(0xffffff, 1.0);
 sun.position.set(100, 200, 80);
+sun.castShadow = true;
 scene.add(sun);
 
-// ----- WORLD -----
+// ----------------------
+// World / water / islands
+// ----------------------
 const OCEAN_SIZE = 4000;
 const WATER_LEVEL = 0;
 const BORDER_RADIUS = 1800;
 
-// water
+// Water plane
 const waterGeo = new THREE.PlaneGeometry(OCEAN_SIZE, OCEAN_SIZE, 128, 128);
 const waterMat = new THREE.MeshPhongMaterial({
   color: 0x1b4f72,
@@ -192,8 +299,22 @@ const waterMat = new THREE.MeshPhongMaterial({
 const water = new THREE.Mesh(waterGeo, waterMat);
 water.rotation.x = -Math.PI / 2;
 water.position.y = WATER_LEVEL;
+water.receiveShadow = true;
 scene.add(water);
 
+// Simple underwater tint plane (for when camera goes below water)
+const underwaterOverlay = new THREE.Mesh(
+  new THREE.PlaneGeometry(2, 2),
+  new THREE.MeshBasicMaterial({
+    color: 0x001a33,
+    transparent: true,
+    opacity: 0
+  })
+);
+underwaterOverlay.position.z = -1;
+camera.add(underwaterOverlay);
+
+// Water animation
 function updateWater(time) {
   const pos = water.geometry.attributes.position;
   for (let i = 0; i < pos.count; i++) {
@@ -201,14 +322,15 @@ function updateWater(time) {
     const z = pos.getZ(i);
     const wave =
       Math.sin((x + time * 20) * 0.002) * 0.3 +
-      Math.cos((z + time * 15) * 0.002) * 0.3;
+      Math.cos((z + time * 15) * 0.002) * 0.3 +
+      Math.sin((x + z + time * 10) * 0.0015) * 0.2;
     pos.setY(i, wave);
   }
   pos.needsUpdate = true;
   water.geometry.computeVertexNormals();
 }
 
-// islands + labels (designed, not just cylinders)
+// Island labels
 const islandLabels = [];
 
 function createIslandLabel(text) {
@@ -234,39 +356,74 @@ function createIslandLabel(text) {
   return sprite;
 }
 
+// Harbor details
 function addHarborDetails(basePos) {
   const dockGeo = new THREE.BoxGeometry(40, 1, 10);
   const dockMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b });
   const dock = new THREE.Mesh(dockGeo, dockMat);
   dock.position.set(basePos.x + 20, basePos.y + 1, basePos.z);
+  dock.castShadow = true;
+  dock.receiveShadow = true;
   scene.add(dock);
+
+  const crateGeo = new THREE.BoxGeometry(3, 3, 3);
+  const crateMat = new THREE.MeshStandardMaterial({ color: 0x6d4c41 });
+  for (let i = 0; i < 4; i++) {
+    const crate = new THREE.Mesh(crateGeo, crateMat);
+    crate.position.set(
+      basePos.x + 10 + i * 3,
+      basePos.y + 2,
+      basePos.z + (i % 2 === 0 ? 4 : -4)
+    );
+    crate.castShadow = true;
+    crate.receiveShadow = true;
+    scene.add(crate);
+  }
+
+  const lampGeo = new THREE.CylinderGeometry(0.2, 0.2, 6, 8);
+  const lampMat = new THREE.MeshStandardMaterial({ color: 0x4e342e });
+  const lamp = new THREE.Mesh(lampGeo, lampMat);
+  lamp.position.set(basePos.x + 30, basePos.y + 4, basePos.z - 3);
+  scene.add(lamp);
+
+  const lampLight = new THREE.PointLight(0xfff2b2, 1.2, 40);
+  lampLight.position.set(basePos.x + 30, basePos.y + 7, basePos.z - 3);
+  scene.add(lampLight);
 }
 
+// Jungle details
 function addJungleDetails(basePos) {
   const trunkGeo = new THREE.CylinderGeometry(0.8, 1.2, 8, 6);
   const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5b3a1a });
   const leafGeo = new THREE.ConeGeometry(4, 6, 8);
   const leafMat = new THREE.MeshStandardMaterial({ color: 0x2e7d32 });
 
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 9; i++) {
     const t = new THREE.Mesh(trunkGeo, trunkMat);
     const l = new THREE.Mesh(leafGeo, leafMat);
-    const angle = (i / 5) * Math.PI * 2;
+    const angle = (i / 9) * Math.PI * 2;
     const r = 20 + Math.random() * 10;
     const x = basePos.x + Math.cos(angle) * r;
     const z = basePos.z + Math.sin(angle) * r;
     t.position.set(x, basePos.y + 4, z);
     l.position.set(x, basePos.y + 9, z);
+    t.castShadow = true;
+    t.receiveShadow = true;
+    l.castShadow = true;
+    l.receiveShadow = true;
     scene.add(t);
     scene.add(l);
   }
 }
 
+// Volcano details
 function addVolcanoDetails(basePos) {
   const coneGeo = new THREE.ConeGeometry(40, 40, 16);
   const coneMat = new THREE.MeshStandardMaterial({ color: 0x4e342e });
   const cone = new THREE.Mesh(coneGeo, coneMat);
   cone.position.set(basePos.x, basePos.y + 25, basePos.z);
+  cone.castShadow = true;
+  cone.receiveShadow = true;
   scene.add(cone);
 
   const lavaGeo = new THREE.CircleGeometry(10, 16);
@@ -277,6 +434,7 @@ function addVolcanoDetails(basePos) {
   scene.add(lava);
 }
 
+// Build islands
 function buildIslands() {
   for (const island of ISLANDS) {
     let mesh;
@@ -288,6 +446,8 @@ function buildIslands() {
       mesh = new THREE.Mesh(geo, mat);
       mesh.scale.y = 0.3;
       mesh.position.copy(basePos);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
       scene.add(mesh);
       addHarborDetails(basePos);
     } else if (island.type === "jungle") {
@@ -296,6 +456,8 @@ function buildIslands() {
       mesh = new THREE.Mesh(geo, mat);
       mesh.scale.y = 0.4;
       mesh.position.copy(basePos);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
       scene.add(mesh);
       addJungleDetails(basePos);
     } else if (island.type === "volcano") {
@@ -304,6 +466,8 @@ function buildIslands() {
       mesh = new THREE.Mesh(geo, mat);
       mesh.scale.y = 0.5;
       mesh.position.copy(basePos);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
       scene.add(mesh);
       addVolcanoDetails(basePos);
     }
@@ -316,7 +480,7 @@ function buildIslands() {
   }
 }
 
-// control sign
+// Control sign near spawn
 function createControlSign() {
   const signGeo = new THREE.BoxGeometry(10, 6, 1);
   const canvas = document.createElement("canvas");
@@ -343,35 +507,90 @@ function createControlSign() {
   const sign = new THREE.Mesh(signGeo, mat);
 
   sign.position.set(0, 12, -20);
+  sign.castShadow = true;
   scene.add(sign);
 }
 
-// ----- ROD MODEL -----
+// ----------------------
+// Rod model in first person
+// ----------------------
 let rodMesh = null;
 
 function createRodMesh() {
-  const rodGeo = new THREE.CylinderGeometry(0.1, 0.15, 5, 8);
-  const rodMat = new THREE.MeshStandardMaterial({ color: 0x8d6e63 });
-  const handleGeo = new THREE.CylinderGeometry(0.2, 0.25, 1.5, 8);
-  const handleMat = new THREE.MeshStandardMaterial({ color: 0x4e342e });
+  const rodGeo = new THREE.CylinderGeometry(0.06, 0.08, 5, 10);
+  const rodMat = new THREE.MeshStandardMaterial({
+    color: currentRod.color,
+    metalness: 0.2,
+    roughness: 0.4
+  });
+
+  const handleGeo = new THREE.CylinderGeometry(0.18, 0.2, 1.6, 10);
+  const handleMat = new THREE.MeshStandardMaterial({
+    color: 0x4e342e,
+    roughness: 0.8
+  });
+
+  const reelBodyGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.4, 16);
+  const reelBodyMat = new THREE.MeshStandardMaterial({
+    color: 0x212121,
+    metalness: 0.6,
+    roughness: 0.3
+  });
+
+  const reelArmGeo = new THREE.BoxGeometry(0.1, 0.6, 0.1);
+  const reelArmMat = new THREE.MeshStandardMaterial({
+    color: 0xbdbdbd,
+    metalness: 0.8,
+    roughness: 0.2
+  });
+
+  const lineGeo = new THREE.CylinderGeometry(0.01, 0.01, 4, 6);
+  const lineMat = new THREE.MeshBasicMaterial({ color: 0xe0f7fa });
 
   const rod = new THREE.Mesh(rodGeo, rodMat);
   const handle = new THREE.Mesh(handleGeo, handleMat);
+  const reelBody = new THREE.Mesh(reelBodyGeo, reelBodyMat);
+  const reelArm = new THREE.Mesh(reelArmGeo, reelArmMat);
+  const line = new THREE.Mesh(lineGeo, lineMat);
 
   const group = new THREE.Group();
-  rod.position.y = 2;
-  handle.position.y = 0.5;
+
+  rod.position.y = 2.4;
+  handle.position.y = 0.6;
+  reelBody.position.set(-0.25, 1.0, 0.0);
+  reelBody.rotation.z = Math.PI / 2;
+  reelArm.position.set(-0.25, 1.5, 0.0);
+  line.position.set(0, 4.5, 0.4);
+  line.rotation.x = Math.PI / 2;
+
   group.add(rod);
   group.add(handle);
+  group.add(reelBody);
+  group.add(reelArm);
+  group.add(line);
 
-  group.position.set(0.6, 1.5, 0.5);
+  group.position.set(0.7, 1.4, 0.6);
   group.rotation.z = -Math.PI / 4;
+  group.rotation.y = Math.PI / 10;
 
   cameraPivot.add(group);
   rodMesh = group;
 }
 
-// ----- REGION -----
+function updateRodAppearance() {
+  if (!rodMesh) return;
+  rodMesh.traverse(child => {
+    if (child.isMesh && child.geometry instanceof THREE.CylinderGeometry) {
+      if (Math.abs(child.geometry.parameters.height - 5) < 0.01) {
+        child.material.color.setHex(currentRod.color);
+      }
+    }
+  });
+}
+
+// ----------------------
+// Region / fish tables
+// ----------------------
 function getRegionIdAtPosition(pos) {
   let closest = null;
   let closestDist = Infinity;
@@ -394,7 +613,9 @@ function getFishTable(regionId) {
   return FISH_TABLES[regionId] || FISH_TABLES["ocean"];
 }
 
-// ----- MOVEMENT & CAMERA -----
+// ----------------------
+// Movement & camera
+// ----------------------
 let yaw = 0;
 let pitch = 0;
 let rightMouseDown = false;
@@ -413,7 +634,6 @@ document.addEventListener("mouseup", e => {
 
 document.addEventListener("mousemove", e => {
   if (!rightMouseDown) return;
-  // FIX: make movement feel natural (no inverse)
   yaw += e.movementX * 0.002;
   pitch -= e.movementY * 0.002;
   pitch = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, pitch));
@@ -421,10 +641,11 @@ document.addEventListener("mousemove", e => {
 
 let velocityY = 0;
 const gravity = -25;
+let cameraBobTime = 0;
 
 function updateMovement(dt) {
-  let forward = 0,
-    right = 0;
+  let forward = 0;
+  let right = 0;
 
   if (keys["KeyW"] || keys["ArrowUp"]) forward += 1;
   if (keys["KeyS"] || keys["ArrowDown"]) forward -= 1;
@@ -432,13 +653,14 @@ function updateMovement(dt) {
   if (keys["KeyD"] || keys["ArrowRight"]) right += 1;
 
   const dir = new THREE.Vector3();
-  cameraHolder.getWorldDirection(dir);
+  camera.getWorldDirection(dir);
   dir.y = 0;
   dir.normalize();
 
   const rightDir = new THREE.Vector3(dir.z, 0, -dir.x);
 
   const move = new THREE.Vector3();
+  // FIX: W moves forward, S moves backward (no inversion)
   move.addScaledVector(dir, forward);
   move.addScaledVector(rightDir, right);
   if (move.length() > 0) move.normalize();
@@ -467,14 +689,38 @@ function updateMovement(dt) {
   cameraHolder.position.copy(player.position);
   cameraHolder.rotation.y = yaw;
   cameraPivot.rotation.x = pitch;
+
+  if (move.length() > 0) {
+    cameraBobTime += dt * 8;
+    const bobOffset = Math.sin(cameraBobTime) * 0.05;
+    camera.position.y = 3 + bobOffset;
+  } else {
+    cameraBobTime *= 0.9;
+    camera.position.y = 3;
+  }
+
+  const camWorldPos = new THREE.Vector3();
+  camera.getWorldPosition(camWorldPos);
+  if (camWorldPos.y < WATER_LEVEL - 0.5) {
+    underwaterOverlay.material.opacity = 0.35;
+  } else {
+    underwaterOverlay.material.opacity = 0;
+  }
 }
 
-// ----- HUD -----
+// ----------------------
+// HUD updates
+// ----------------------
 function updateHUD() {
   const pos = player.position;
   const depth = Math.max(0, WATER_LEVEL - pos.y);
   const regionId = getRegionIdAtPosition(pos);
   const island = ISLANDS.find(i => i.id === regionId);
+
+  if (island && !discoveredIslands.has(island.id)) {
+    discoveredIslands.add(island.id);
+    showBanner(`Discovered: ${island.name}`);
+  }
 
   hudRegion.textContent = `Region: ${island ? island.name : "Open Ocean"}`;
   hudGPS.textContent = `X: ${pos.x.toFixed(0)} | Y: ${pos.y.toFixed(0)} | Z: ${pos.z.toFixed(0)}`;
@@ -488,18 +734,24 @@ function updateHUD() {
   }
 }
 
-// ----- CATCH ALERT -----
+// ----------------------
+// Catch alert
+// ----------------------
 function showCatchAlert(rarity) {
   const color = rarityColors[rarity] || "#ffffff";
   catchAlert.style.borderColor = color;
   catchAlert.style.color = color;
   catchAlert.style.opacity = "1";
+  catchAlert.style.animation = "catchPulse 0.4s alternate 2";
   setTimeout(() => {
     catchAlert.style.opacity = "0";
-  }, 600);
+    catchAlert.style.animation = "none";
+  }, 700);
 }
 
-// ----- FISHING -----
+// ----------------------
+// Fishing system
+// ----------------------
 let isFishing = false;
 let fishingState = "idle";
 let fishingCastTime = 0;
@@ -508,7 +760,10 @@ let currentBobber = null;
 let currentHookedFish = null;
 
 const bobberGeo = new THREE.SphereGeometry(0.3, 16, 16);
-const bobberMat = new THREE.MeshStandardMaterial({ color: 0xffb86c, emissive: 0x331100 });
+const bobberMat = new THREE.MeshStandardMaterial({
+  color: 0xffb86c,
+  emissive: 0x331100
+});
 
 function baseVariantChanceForRarity(rarity) {
   switch (rarity) {
@@ -538,13 +793,14 @@ function castBobber(power) {
   }
   const bobber = new THREE.Mesh(bobberGeo, bobberMat.clone());
   const dir = new THREE.Vector3();
-  cameraHolder.getWorldDirection(dir);
+  camera.getWorldDirection(dir);
   dir.y = 0;
   dir.normalize();
   const distance = 5 + power * 10;
   const pos = player.position.clone().add(dir.multiplyScalar(distance));
   pos.y = WATER_LEVEL + 0.3;
   bobber.position.copy(pos);
+  bobber.castShadow = true;
   scene.add(bobber);
   currentBobber = bobber;
 }
@@ -565,7 +821,8 @@ function pickFish(regionId) {
 
 function reelInFish() {
   if (!currentHookedFish) return;
-  console.log("Caught fish:", currentHookedFish);
+  discoveredFish.add(currentHookedFish.name);
+  showCatchAlert(currentHookedFish.rarity);
   endFishing();
 }
 
@@ -615,7 +872,6 @@ function updateFishing(dt, time) {
   }
 }
 
-// interact key
 document.addEventListener("keydown", e => {
   if (e.code === "KeyE") {
     if (!isFishing) startFishing();
@@ -623,7 +879,9 @@ document.addEventListener("keydown", e => {
   }
 });
 
-// ----- EXOTIC SPAWNS -----
+// ----------------------
+// Exotic spawns
+// ----------------------
 let exoticActive = false;
 let exoticTimer = 0;
 let exoticDuration = 0;
@@ -650,6 +908,9 @@ function updateExotic(dt) {
   }
 }
 
+// ----------------------
+// Banner
+// ----------------------
 function showBanner(text) {
   hudCenterBanner.textContent = text;
   hudCenterBanner.style.opacity = "1";
@@ -658,95 +919,72 @@ function showBanner(text) {
   }, 10000);
 }
 
-// ----- RADAR -----
-let radarFishPoints = [];
-let radarTimer = 0;
-
-function updateRadarData() {
-  radarFishPoints = [];
+// ----------------------
+// Fish radar (directional only)
+// ----------------------
+function getClosestFishDirection() {
   const regionId = getRegionIdAtPosition(player.position);
   const table = getFishTable(regionId);
-  for (let i = 0; i < 12; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const dist = 10 + Math.random() * 60;
-    const x = player.position.x + Math.cos(angle) * dist;
-    const z = player.position.z + Math.sin(angle) * dist;
-    const fish = table[Math.floor(Math.random() * table.length)];
-    radarFishPoints.push({
-      x,
-      z,
-      rarity: fish.rarity,
-      variant: Math.random() < 0.05
-    });
+
+  if (!table || table.length === 0) return null;
+
+  const fish = table[Math.floor(Math.random() * table.length)];
+  const angle = Math.random() * Math.PI * 2;
+
+  return {
+    fish,
+    angle
+  };
+}
+
+function updateFishRadar() {
+  const data = getClosestFishDirection();
+
+  if (!data) {
+    radarArrow.style.opacity = "0.3";
+    radarArrow.style.animation = "none";
+    radarArrow.style.transform = "rotate(0rad)";
+    radarArrow.style.color = "#ffffff";
+    radarLabel.textContent = "No fish detected";
+    return;
   }
-  if (exoticActive) {
-    radarFishPoints.push({
-      x: exoticPosition.x,
-      z: exoticPosition.z,
-      rarity: RARITY.EXOTIC,
-      variant: true
-    });
+
+  const { fish, angle } = data;
+
+  radarArrow.style.opacity = "1";
+  radarArrow.style.transform = `rotate(${angle}rad)`;
+  radarArrow.style.color = rarityColors[fish.rarity] || "#ffffff";
+  radarLabel.textContent = fish.name;
+
+  if (
+    fish.rarity === RARITY.EPIC ||
+    fish.rarity === RARITY.LEGENDARY ||
+    fish.rarity === RARITY.MYTHIC ||
+    fish.rarity === RARITY.EXOTIC
+  ) {
+    radarArrow.style.animation = "pulse 0.6s infinite alternate";
+  } else {
+    radarArrow.style.animation = "none";
   }
 }
 
-function drawRadar() {
-  const w = radarCanvas.width;
-  const h = radarCanvas.height;
-  const cx = w / 2;
-  const cy = h / 2;
-  const maxRange = 80;
+setInterval(updateFishRadar, 1500);
 
-  radarCtx.clearRect(0, 0, w, h);
-  radarCtx.fillStyle = "rgba(0,0,0,0.8)";
-  radarCtx.fillRect(0, 0, w, h);
-
-  radarCtx.strokeStyle = "rgba(255,255,255,0.2)";
-  radarCtx.beginPath();
-  radarCtx.arc(cx, cy, w / 2 - 6, 0, Math.PI * 2);
-  radarCtx.stroke();
-
-  radarCtx.strokeStyle = "rgba(255,255,255,0.1)";
-  radarCtx.beginPath();
-  radarCtx.arc(cx, cy, (w / 2 - 6) * 0.66, 0, Math.PI * 2);
-  radarCtx.stroke();
-
-  radarCtx.beginPath();
-  radarCtx.arc(cx, cy, (w / 2 - 6) * 0.33, 0, Math.PI * 2);
-  radarCtx.stroke();
-
-  radarCtx.fillStyle = "#ffffff";
-  radarCtx.beginPath();
-  radarCtx.arc(cx, cy, 3, 0, Math.PI * 2);
-  radarCtx.fill();
-
-  for (const p of radarFishPoints) {
-    const dx = p.x - player.position.x;
-    const dz = p.z - player.position.z;
-    const dist = Math.sqrt(dx * dx + dz * dz);
-    if (dist > maxRange) continue;
-    const angle = Math.atan2(dz, dx) - cameraHolder.rotation.y;
-    const r = (dist / maxRange) * (w / 2 - 8);
-    const px = cx + Math.cos(angle) * r;
-    const py = cy + Math.sin(angle) * r;
-
-    const color = rarityColors[p.rarity] || "#ffffff";
-    radarCtx.fillStyle = color;
-    radarCtx.beginPath();
-    radarCtx.arc(px, py, p.variant ? 4 : 3, 0, Math.PI * 2);
-    radarCtx.fill();
-
-    if (p.variant) {
-      radarCtx.strokeStyle = "rgba(255,255,255,0.7)";
-      radarCtx.beginPath();
-      radarCtx.arc(px, py, 6, 0, Math.PI * 2);
-      radarCtx.stroke();
-    }
-  }
-}
-
-// ----- HOTBAR / GUI -----
+// ----------------------
+// GUI / hotbar
+// ----------------------
 function hideAllPanels() {
-  [panelRod, panelToolBag, panelBaitBag, panelBestiary, panelQuest, panelTotems, panelPotions, panelRelic, panelUtility]
+  [
+    panelRod,
+    panelToolBag,
+    panelBaitBag,
+    panelBestiary,
+    panelQuest,
+    panelTotems,
+    panelPotions,
+    panelRelic,
+    panelUtility
+  ]
     .filter(Boolean)
     .forEach(p => (p.style.display = "none"));
 }
@@ -756,6 +994,18 @@ function showPanel(panel) {
   hideAllPanels();
   panel.style.display = "block";
 }
+
+[panelRod, panelToolBag, panelBaitBag, panelBestiary, panelQuest, panelTotems, panelPotions, panelRelic, panelUtility]
+  .filter(Boolean)
+  .forEach(panel => {
+    panel.addEventListener("click", e => {
+      const rect = panel.getBoundingClientRect();
+      const xIconArea = rect.right - 24;
+      if (e.clientX >= xIconArea && e.clientY <= rect.top + 24) {
+        panel.style.display = "none";
+      }
+    });
+  });
 
 if (btnRod) btnRod.onclick = () => showPanel(panelRod);
 if (btnToolBag) btnToolBag.onclick = () => showPanel(panelToolBag);
@@ -767,13 +1017,319 @@ if (btnPotions) btnPotions.onclick = () => showPanel(panelPotions);
 if (btnRelic) btnRelic.onclick = () => showPanel(panelRelic);
 if (btnUtility) btnUtility.onclick = () => showPanel(panelUtility);
 
+function setActiveHotbarSlot(index) {
+  hotbarSlots.forEach((slot, i) => {
+    if (i === index) slot.classList.add("active");
+    else slot.classList.remove("active");
+  });
+}
+
+setActiveHotbarSlot(0);
+
 document.addEventListener("keydown", e => {
   if (e.code >= "Digit1" && e.code <= "Digit9") {
-    selectedHotbarSlot = parseInt(e.code.slice(-1), 10) - 1;
+    const idx = parseInt(e.code.slice(-1), 10) - 1;
+    selectedHotbarSlot = idx;
+    setActiveHotbarSlot(idx);
+    if (idx >= 0 && idx < RODS.length) {
+      currentRod = RODS[idx];
+      discoveredRods.add(currentRod.id);
+      updateRodAppearance();
+    }
   }
 });
 
-// ----- MAIN LOOP -----
+// ----------------------
+// Bestiary population
+// ----------------------
+function rarityLabel(r) {
+  switch (r) {
+    case RARITY.COMMON: return "Common";
+    case RARITY.UNCOMMON: return "Uncommon";
+    case RARITY.RARE: return "Rare";
+    case RARITY.EPIC: return "Epic";
+    case RARITY.LEGENDARY: return "Legendary";
+    case RARITY.MYTHIC: return "Mythic";
+    case RARITY.EXOTIC: return "Exotic";
+    default: return "Unknown";
+  }
+}
+
+function populateRodPanel() {
+  if (!rodList) return;
+  rodList.innerHTML = "";
+  RODS.forEach(rod => {
+    const div = document.createElement("div");
+    div.className = "bestiary-entry";
+    const name = document.createElement("div");
+    name.className = "bestiary-entry-name";
+    name.textContent = rod.name;
+    name.style.color = rarityColors[rod.rarity] || "#fff";
+    const meta = document.createElement("div");
+    meta.className = "bestiary-entry-meta";
+    meta.textContent = `${rarityLabel(rod.rarity)} • ${rod.desc} • ${rod.control}`;
+    div.appendChild(name);
+    div.appendChild(meta);
+    rodList.appendChild(div);
+  });
+}
+
+function populateBaitPanel() {
+  if (!baitList) return;
+  baitList.innerHTML = "";
+  BAITS.forEach(bait => {
+    const div = document.createElement("div");
+    div.className = "bestiary-entry";
+    const name = document.createElement("div");
+    name.className = "bestiary-entry-name";
+    name.textContent = bait.name;
+    name.style.color = rarityColors[bait.rarity] || "#fff";
+    const meta = document.createElement("div");
+    meta.className = "bestiary-entry-meta";
+    meta.textContent = `${rarityLabel(bait.rarity)} • ${bait.desc}`;
+    div.appendChild(name);
+    div.appendChild(meta);
+    baitList.appendChild(div);
+  });
+}
+
+function populateToolPanel() {
+  if (!toolList) return;
+  toolList.innerHTML = "";
+  TOOLS.forEach(tool => {
+    const div = document.createElement("div");
+    div.className = "bestiary-entry";
+    const name = document.createElement("div");
+    name.className = "bestiary-entry-name";
+    name.textContent = tool.name;
+    const meta = document.createElement("div");
+    meta.className = "bestiary-entry-meta";
+    meta.textContent = tool.desc;
+    div.appendChild(name);
+    div.appendChild(meta);
+    toolList.appendChild(div);
+  });
+}
+
+function populateQuestPanel() {
+  if (!questList) return;
+  questList.innerHTML = "";
+  const placeholder = document.createElement("div");
+  placeholder.className = "bestiary-entry-meta";
+  placeholder.textContent = "No quests yet. Future NPCs will offer tasks and storylines.";
+  questList.appendChild(placeholder);
+}
+
+function populateTotemPanel() {
+  if (!totemList) return;
+  totemList.innerHTML = "";
+  TOTEMS.forEach(totem => {
+    const div = document.createElement("div");
+    div.className = "bestiary-entry";
+    const name = document.createElement("div");
+    name.className = "bestiary-entry-name";
+    name.textContent = totem.name;
+    const meta = document.createElement("div");
+    meta.className = "bestiary-entry-meta";
+    meta.textContent = totem.desc;
+    div.appendChild(name);
+    div.appendChild(meta);
+    totemList.appendChild(div);
+  });
+}
+
+function populatePotionPanel() {
+  if (!potionList) return;
+  potionList.innerHTML = "";
+  POTIONS.forEach(potion => {
+    const div = document.createElement("div");
+    div.className = "bestiary-entry";
+    const name = document.createElement("div");
+    name.className = "bestiary-entry-name";
+    name.textContent = potion.name;
+    const meta = document.createElement("div");
+    meta.className = "bestiary-entry-meta";
+    meta.textContent = potion.desc;
+    div.appendChild(name);
+    div.appendChild(meta);
+    potionList.appendChild(div);
+  });
+}
+
+function populateRelicPanel() {
+  if (!relicInfo) return;
+  relicInfo.innerHTML = "";
+  const name = document.createElement("div");
+  name.className = "bestiary-entry-name";
+  name.textContent = RELIC.name;
+  const meta = document.createElement("div");
+  meta.className = "bestiary-entry-meta";
+  meta.textContent = RELIC.desc;
+  relicInfo.appendChild(name);
+  relicInfo.appendChild(meta);
+}
+
+function populateUtilityPanel() {
+  if (!utilityList) return;
+  utilityList.innerHTML = "";
+  UTILITIES.forEach(util => {
+    const div = document.createElement("div");
+    div.className = "bestiary-entry";
+    const name = document.createElement("div");
+    name.className = "bestiary-entry-name";
+    name.textContent = util.name;
+    const meta = document.createElement("div");
+    meta.className = "bestiary-entry-meta";
+    meta.textContent = util.desc;
+    div.appendChild(name);
+    div.appendChild(meta);
+    utilityList.appendChild(div);
+  });
+}
+
+function populateBestiaryFish() {
+  if (!bestiaryFish) return;
+  bestiaryFish.innerHTML = "";
+  const allRegions = Object.keys(FISH_TABLES);
+  allRegions.forEach(regionId => {
+    const regionHeader = document.createElement("div");
+    regionHeader.className = "bestiary-entry-meta";
+    regionHeader.style.marginTop = "4px";
+    regionHeader.textContent =
+      regionId === "ocean"
+        ? "Open Ocean"
+        : ISLANDS.find(i => i.id === regionId)?.name || regionId;
+    bestiaryFish.appendChild(regionHeader);
+
+    FISH_TABLES[regionId].forEach(fish => {
+      const div = document.createElement("div");
+      div.className = "bestiary-entry";
+      const name = document.createElement("div");
+      name.className = "bestiary-entry-name";
+      const discovered = discoveredFish.has(fish.name);
+      name.textContent = discovered ? fish.name : "???";
+      name.style.color = discovered ? (rarityColors[fish.rarity] || "#fff") : "#888";
+      const meta = document.createElement("div");
+      meta.className = "bestiary-entry-meta";
+      meta.textContent = discovered
+        ? `${rarityLabel(fish.rarity)} • ${fish.depth} depth`
+        : "Undiscovered";
+      div.appendChild(name);
+      div.appendChild(meta);
+      bestiaryFish.appendChild(div);
+    });
+  });
+}
+
+function populateBestiaryRods() {
+  if (!bestiaryRods) return;
+  bestiaryRods.innerHTML = "";
+  RODS.forEach(rod => {
+    const div = document.createElement("div");
+    div.className = "bestiary-entry";
+    const name = document.createElement("div");
+    name.className = "bestiary-entry-name";
+    const discovered = discoveredRods.has(rod.id);
+    name.textContent = discovered ? rod.name : "???";
+    name.style.color = discovered ? (rarityColors[rod.rarity] || "#fff") : "#888";
+    const meta = document.createElement("div");
+    meta.className = "bestiary-entry-meta";
+    meta.textContent = discovered
+      ? `${rarityLabel(rod.rarity)} • Variant bonus: ${(rod.variantBonus * 100).toFixed(1)}%`
+      : "Undiscovered";
+    div.appendChild(name);
+    div.appendChild(meta);
+    bestiaryRods.appendChild(div);
+  });
+}
+
+function populateBestiaryIslands() {
+  if (!bestiaryIslands) return;
+  bestiaryIslands.innerHTML = "";
+  ISLANDS.forEach(island => {
+    const div = document.createElement("div");
+    div.className = "bestiary-entry";
+    const name = document.createElement("div");
+    name.className = "bestiary-entry-name";
+    const discovered = discoveredIslands.has(island.id);
+    name.textContent = discovered ? island.name : "???";
+    name.style.color = discovered ? "#fff" : "#888";
+    const meta = document.createElement("div");
+    meta.className = "bestiary-entry-meta";
+    meta.textContent = discovered ? `Type: ${island.type}` : "Undiscovered";
+    div.appendChild(name);
+    div.appendChild(meta);
+    bestiaryIslands.appendChild(div);
+  });
+}
+
+function initBestiaryTabs() {
+  if (!bestiaryTabs) return;
+  const buttons = Array.from(bestiaryTabs.querySelectorAll("button"));
+  const sections = {
+    fish: bestiaryFish,
+    rods: bestiaryRods,
+    islands: bestiaryIslands
+  };
+
+  function activate(tab) {
+    buttons.forEach(btn => {
+      if (btn.dataset.tab === tab) btn.classList.add("active");
+      else btn.classList.remove("active");
+    });
+    Object.keys(sections).forEach(key => {
+      if (key === tab) sections[key].classList.add("active");
+      else sections[key].classList.remove("active");
+    });
+  }
+
+  buttons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const tab = btn.dataset.tab;
+      if (tab === "fish") populateBestiaryFish();
+      if (tab === "rods") populateBestiaryRods();
+      if (tab === "islands") populateBestiaryIslands();
+      activate(tab);
+    });
+  });
+
+  populateBestiaryFish();
+  populateBestiaryRods();
+  populateBestiaryIslands();
+  activate("fish");
+}
+
+// ----------------------
+// Day-night cycle
+// ----------------------
+let dayTime = 0; // 0..1
+
+function updateDayNight(dt) {
+  const cycleLength = 240;
+  dayTime = (dayTime + dt / cycleLength) % 1;
+
+  const t = Math.sin(dayTime * Math.PI * 2) * 0.5 + 0.5;
+
+  const skyColor = new THREE.Color().lerpColors(nightSkyColor, daySkyColor, t);
+  const fogColor = new THREE.Color().lerpColors(nightFogColor, dayFogColor, t);
+
+  renderer.setClearColor(skyColor);
+  scene.fog.color.copy(fogColor);
+
+  const sunIntensity = 0.3 + t * 0.9;
+  sun.intensity = sunIntensity;
+  hemi.intensity = 0.4 + t * 0.6;
+
+  sun.position.set(
+    Math.cos(dayTime * Math.PI * 2) * 200,
+    150 + Math.sin(dayTime * Math.PI * 2) * 100,
+    80
+  );
+}
+
+// ----------------------
+// Main loop
+// ----------------------
 let lastTime = performance.now();
 let exoticSpawnTimer = 0;
 
@@ -786,13 +1342,7 @@ function loop(now) {
   updateFishing(dt, now / 1000);
   updateExotic(dt);
   updateWater(now / 1000);
-
-  radarTimer += dt;
-  if (radarTimer > 0.5) {
-    radarTimer = 0;
-    updateRadarData();
-  }
-  drawRadar();
+  updateDayNight(dt);
 
   exoticSpawnTimer += dt;
   if (exoticSpawnTimer > 120 && !exoticActive) {
@@ -804,11 +1354,23 @@ function loop(now) {
   requestAnimationFrame(loop);
 }
 
-// ----- INIT -----
+// ----------------------
+// Init
+// ----------------------
 function init() {
   buildIslands();
   createControlSign();
   createRodMesh();
+
+  populateRodPanel();
+  populateBaitPanel();
+  populateToolPanel();
+  populateQuestPanel();
+  populateTotemPanel();
+  populatePotionPanel();
+  populateRelicPanel();
+  populateUtilityPanel();
+  initBestiaryTabs();
 
   window.addEventListener("resize", () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
