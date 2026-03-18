@@ -1,0 +1,60 @@
+{
+  "islands": [
+    {
+      "id": "harbor",
+      "name": "Harbor's Rest",
+      "type": "surface",
+      "position": [0, -5, 0],
+      "radius": 120,
+      "biome": "harbor"
+    },
+    {
+      "id": "jungle",
+      "name": "Verdant Reach",
+      "type": "surface",
+      "position": [600, -5, 400],
+      "radius": 140,
+      "biome": "jungle"
+    },
+    {
+      "id": "volcano",
+      "name": "Ashspire Isle",
+      "type": "volcano",
+      "position": [-800, -5, -300],
+      "radius": 150,
+      "biome": "volcano"
+    },
+    {
+      "id": "abyssal_shelf",
+      "name": "Abyssal Shelf",
+      "type": "underwater",
+      "position": [200, -80, 200],
+      "radius": 200,
+      "biome": "deep_sea"
+    },
+    {
+      "id": "coral_graveyard",
+      "name": "Coral Graveyard",
+      "type": "underwater",
+      "position": [-300, -150, 500],
+      "radius": 220,
+      "biome": "coral"
+    },
+    {
+      "id": "sunken_city",
+      "name": "Sunken City of Aqualon",
+      "type": "underwater",
+      "position": [900, -250, -200],
+      "radius": 260,
+      "biome": "ancient"
+    },
+    {
+      "id": "rift_abyss",
+      "name": "Rift Abyss",
+      "type": "rift",
+      "position": [-1200, -350, 800],
+      "radius": 300,
+      "biome": "rift"
+    }
+  ]
+}
