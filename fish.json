@@ -1,0 +1,58 @@
+{
+  "fish": {
+    "harbor": [
+      { "name": "Harbor Minnow", "rarity": "common", "depth": "surface" },
+      { "name": "Dock Perch", "rarity": "common", "depth": "surface" },
+      { "name": "Harbor Runner", "rarity": "uncommon", "depth": "surface" },
+      { "name": "Pier Snapper", "rarity": "rare", "depth": "mid" },
+      { "name": "Tide Barracuda", "rarity": "epic", "depth": "mid" },
+      { "name": "Harbor Leviathan", "rarity": "legendary", "depth": "deep" }
+    ],
+
+    "jungle": [
+      { "name": "Reed Minnow", "rarity": "common", "depth": "surface" },
+      { "name": "Mossback Fry", "rarity": "uncommon", "depth": "surface" },
+      { "name": "Vine Pike", "rarity": "rare", "depth": "mid" },
+      { "name": "Emerald Ray", "rarity": "epic", "depth": "mid" },
+      { "name": "Verdant Serpent", "rarity": "legendary", "depth": "deep" },
+      { "name": "Elder Verdant Leviathan", "rarity": "mythic", "depth": "deep" }
+    ],
+
+    "volcano": [
+      { "name": "Ember Minnow", "rarity": "common", "depth": "surface" },
+      { "name": "Lava Perch", "rarity": "uncommon", "depth": "surface" },
+      { "name": "Volcanic Snapper", "rarity": "rare", "depth": "mid" },
+      { "name": "Ash Serpent", "rarity": "epic", "depth": "deep" },
+      { "name": "Pyreback Titan", "rarity": "legendary", "depth": "deep" },
+      { "name": "Infernal Leviathan", "rarity": "mythic", "depth": "deep" }
+    ],
+
+    "deep_sea": [
+      { "name": "Twilight Minnow", "rarity": "common", "depth": "mid" },
+      { "name": "Lantern Carp", "rarity": "uncommon", "depth": "mid" },
+      { "name": "Ironjaw Eel", "rarity": "rare", "depth": "deep" },
+      { "name": "Rift Serpent", "rarity": "epic", "depth": "deep" },
+      { "name": "Voidback Whale", "rarity": "legendary", "depth": "abyss" },
+      { "name": "Sovereign of the Abyss", "rarity": "mythic", "depth": "abyss" }
+    ],
+
+    "coral": [
+      { "name": "Coralback Pike", "rarity": "common", "depth": "surface" },
+      { "name": "Reef Phantom", "rarity": "rare", "depth": "mid" },
+      { "name": "Glow Barracuda", "rarity": "epic", "depth": "mid" },
+      { "name": "Coral Serpent", "rarity": "legendary", "depth": "deep" }
+    ],
+
+    "ancient": [
+      { "name": "Aqualon Runner", "rarity": "rare", "depth": "mid" },
+      { "name": "Crystal Leviathan", "rarity": "legendary", "depth": "deep" },
+      { "name": "Abyss Sovereign", "rarity": "mythic", "depth": "abyss" }
+    ],
+
+    "rift": [
+      { "name": "Nullscale Phantom", "rarity": "epic", "depth": "rift" },
+      { "name": "Riftback Titan", "rarity": "legendary", "depth": "rift" },
+      { "name": "Crowned Abyss", "rarity": "exotic", "depth": "rift" }
+    ]
+  }
+}
