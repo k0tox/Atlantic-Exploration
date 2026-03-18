@@ -1,0 +1,41 @@
+{
+  "bait": [
+    {
+      "id": "glowworms",
+      "name": "Glowworms",
+      "rarityBoost": {
+        "uncommon": 0.05,
+        "rare": 0.02
+      },
+      "biomes": ["harbor", "jungle"]
+    },
+    {
+      "id": "drift_larvae",
+      "name": "Drift Larvae",
+      "rarityBoost": {
+        "rare": 0.04,
+        "epic": 0.01
+      },
+      "biomes": ["harbor", "deep_sea"]
+    },
+    {
+      "id": "ember_shrimp",
+      "name": "Ember Shrimp",
+      "rarityBoost": {
+        "rare": 0.05,
+        "epic": 0.03
+      },
+      "biomes": ["volcano"]
+    },
+    {
+      "id": "abyss_spores",
+      "name": "Abyss Spores",
+      "rarityBoost": {
+        "epic": 0.05,
+        "legendary": 0.03,
+        "mythic": 0.01
+      },
+      "biomes": ["deep_sea", "abyss"]
+    }
+  ]
+}
