@@ -18,15 +18,15 @@
 
   <div id="hudBottom">
     <div id="hotbar">
-      <div class="hotbar-slot" data-slot="1">Rod</div>
-      <div class="hotbar-slot" data-slot="2">Tool Bag</div>
-      <div class="hotbar-slot" data-slot="3">Bait Bag</div>
-      <div class="hotbar-slot" data-slot="4">Bestiary</div>
-      <div class="hotbar-slot" data-slot="5">Quest Scroll</div>
-      <div class="hotbar-slot" data-slot="6">Totems</div>
-      <div class="hotbar-slot" data-slot="7">Potions</div>
-      <div class="hotbar-slot" data-slot="8">Relic Key</div>
-      <div class="hotbar-slot" data-slot="9">Utility</div>
+      <div class="hotbar-slot" id="btnRod" data-slot="1">Rod</div>
+      <div class="hotbar-slot" id="btnToolBag" data-slot="2">Tool Bag</div>
+      <div class="hotbar-slot" id="btnBaitBag" data-slot="3">Bait Bag</div>
+      <div class="hotbar-slot" id="btnBestiary" data-slot="4">Bestiary</div>
+      <div class="hotbar-slot" id="btnQuest" data-slot="5">Quest Scroll</div>
+      <div class="hotbar-slot" id="btnTotems" data-slot="6">Totems</div>
+      <div class="hotbar-slot" id="btnPotions" data-slot="7">Potions</div>
+      <div class="hotbar-slot" id="btnRelic" data-slot="8">Relic Key</div>
+      <div class="hotbar-slot" id="btnUtility" data-slot="9">Utility</div>
     </div>
     <div id="catchAlert">!</div>
   </div>
@@ -35,14 +35,16 @@
     <canvas id="radarCanvas" width="140" height="140"></canvas>
   </div>
 
-  <div id="helpPanel">
-    <h3>Controls</h3>
-    <p>WASD / Arrows — Move</p>
-    <p>Right Click + Mouse — Rotate camera</p>
-    <p>E — Interact / Fish</p>
-    <p>Shift — Swim down (underwater)</p>
-    <p>Space — Jump / Swim up</p>
-  </div>
+  <!-- Simple prototype GUIs -->
+  <div id="panelRod" class="gui-panel">Rod details go here.</div>
+  <div id="panelToolBag" class="gui-panel">Tool bag contents.</div>
+  <div id="panelBaitBag" class="gui-panel">Bait bag contents.</div>
+  <div id="panelBestiary" class="gui-panel">Bestiary entries.</div>
+  <div id="panelQuest" class="gui-panel">Quest log.</div>
+  <div id="panelTotems" class="gui-panel">Totems and weather events.</div>
+  <div id="panelPotions" class="gui-panel">Potions list.</div>
+  <div id="panelRelic" class="gui-panel">Relic key info.</div>
+  <div id="panelUtility" class="gui-panel">Utility items.</div>
 
   <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
   <script src="main.js"></script>
