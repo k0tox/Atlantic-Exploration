@@ -1,5 +1,4 @@
-// Fisch Bucket Prototype
-// Core: 3D world, camera, GPS, island names, basic fishing, radar, exotic spawns, variants, totem weather
+// Fisch Bucket Prototype (JSON-driven)
 
 // ===== DOM =====
 const canvas = document.getElementById("gameCanvas");
@@ -10,6 +9,28 @@ const hudCenterBanner = document.getElementById("hudCenterBanner");
 const catchAlert = document.getElementById("catchAlert");
 const radarCanvas = document.getElementById("radarCanvas");
 const radarCtx = radarCanvas.getContext("2d");
+
+// ===== DATA (JSON) =====
+let DATA = {
+  rods: [],
+  bait: [],
+  islands: [],
+  fish: {}
+};
+
+async function loadGameData() {
+  const rods = await fetch("./data/rods.json").then(r => r.json());
+  const bait = await fetch("./data/bait.json").then(r => r.json());
+  const islands = await fetch("./data/islands.json").then(r => r.json());
+  const fish = await fetch("./data/fish.json").then(r => r.json());
+
+  DATA.rods = rods.rods;
+  DATA.bait = bait.bait;
+  DATA.islands = islands.islands;
+  DATA.fish = fish.fish;
+
+  console.log("Loaded game data:", DATA);
+}
 
 // ===== THREE SETUP =====
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -26,7 +47,7 @@ const camera = new THREE.PerspectiveCamera(
   4000
 );
 
-// Camera rig: holder -> pivot -> camera
+// Camera rig
 const cameraHolder = new THREE.Object3D();
 const cameraPivot = new THREE.Object3D();
 cameraHolder.add(cameraPivot);
@@ -71,44 +92,22 @@ water.rotation.x = -Math.PI / 2;
 water.position.y = WATER_LEVEL;
 scene.add(water);
 
-// Simple wave detail via vertex displacement
 function updateWater(time) {
   const pos = water.geometry.attributes.position;
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i);
     const z = pos.getZ(i);
-    const wave = Math.sin((x + time * 20) * 0.002) * 0.3 +
-                 Math.cos((z + time * 15) * 0.002) * 0.3;
+    const wave =
+      Math.sin((x + time * 20) * 0.002) * 0.3 +
+      Math.cos((z + time * 15) * 0.002) * 0.3;
     pos.setY(i, wave);
   }
   pos.needsUpdate = true;
   water.geometry.computeVertexNormals();
 }
 
-// Islands data
-const islands = [
-  {
-    name: "Harbor's Rest",
-    position: new THREE.Vector3(0, -5, 0),
-    radius: 120,
-    regionId: "harbor"
-  },
-  {
-    name: "Verdant Reach",
-    position: new THREE.Vector3(600, -5, 400),
-    radius: 140,
-    regionId: "jungle"
-  },
-  {
-    name: "Ashspire Isle",
-    position: new THREE.Vector3(-800, -5, -300),
-    radius: 150,
-    regionId: "volcano"
-  }
-];
-
-// Create simple island meshes + labels
-const islandMeshes = [];
+// Islands from JSON
+let islands = [];
 const islandLabels = [];
 
 const labelCanvas = document.createElement("canvas");
@@ -116,15 +115,7 @@ labelCanvas.width = 256;
 labelCanvas.height = 64;
 const labelCtx = labelCanvas.getContext("2d");
 
-function createIsland(island) {
-  const geo = new THREE.CylinderGeometry(island.radius * 0.6, island.radius, 10, 32);
-  const mat = new THREE.MeshStandardMaterial({ color: 0xc2b280 });
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.position.copy(island.position);
-  scene.add(mesh);
-  islandMeshes.push({ island, mesh });
-
-  // Label
+function createIslandLabel(text) {
   labelCtx.clearRect(0, 0, labelCanvas.width, labelCanvas.height);
   labelCtx.fillStyle = "rgba(0,0,0,0.6)";
   labelCtx.fillRect(0, 0, labelCanvas.width, labelCanvas.height);
@@ -132,19 +123,32 @@ function createIsland(island) {
   labelCtx.font = "24px system-ui";
   labelCtx.textAlign = "center";
   labelCtx.textBaseline = "middle";
-  labelCtx.fillText(island.name, labelCanvas.width / 2, labelCanvas.height / 2);
+  labelCtx.fillText(text, labelCanvas.width / 2, labelCanvas.height / 2);
 
   const tex = new THREE.CanvasTexture(labelCanvas);
   const spriteMat = new THREE.SpriteMaterial({ map: tex, transparent: true });
   const sprite = new THREE.Sprite(spriteMat);
   sprite.scale.set(80, 20, 1);
-  sprite.position.copy(island.position).add(new THREE.Vector3(0, 20, 0));
   sprite.material.opacity = 0;
-  scene.add(sprite);
-  islandLabels.push({ island, sprite });
+  return sprite;
 }
 
-islands.forEach(createIsland);
+function buildIslands() {
+  islands = DATA.islands;
+  for (const island of islands) {
+    const geo = new THREE.CylinderGeometry(island.radius * 0.6, island.radius, 10, 32);
+    const mat = new THREE.MeshStandardMaterial({ color: 0xc2b280 });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(island.position[0], island.position[1], island.position[2]);
+    scene.add(mesh);
+
+    const label = createIslandLabel(island.name);
+    label.position.set(island.position[0], island.position[1] + 20, island.position[2]);
+    island.label = label;
+    scene.add(label);
+    islandLabels.push({ island, sprite: label });
+  }
+}
 
 // ===== PLAYER MOVEMENT & CAMERA =====
 let yaw = 0;
@@ -162,15 +166,11 @@ document.addEventListener("keyup", (e) => {
 canvas.addEventListener("contextmenu", (e) => e.preventDefault());
 
 canvas.addEventListener("mousedown", (e) => {
-  if (e.button === 2) {
-    rightMouseDown = true;
-  }
+  if (e.button === 2) rightMouseDown = true;
 });
 
 document.addEventListener("mouseup", (e) => {
-  if (e.button === 2) {
-    rightMouseDown = false;
-  }
+  if (e.button === 2) rightMouseDown = false;
 });
 
 document.addEventListener("mousemove", (e) => {
@@ -188,12 +188,11 @@ const gravity = -25;
 let velocityY = 0;
 let isUnderwater = false;
 
-// Oxygen (simple)
 let oxygen = 100;
 const OXYGEN_DRAIN_RATE = 10;
 const OXYGEN_REGEN_RATE = 20;
 
-// ===== FISH / RODS / VARIANTS DATA (PROTOTYPE) =====
+// ===== RARITY / VARIANTS =====
 const RARITY = {
   COMMON: "common",
   UNCOMMON: "uncommon",
@@ -239,98 +238,45 @@ function baseVariantChanceForRarity(rarity) {
   }
 }
 
-// Simple rods
-const rods = [
-  {
-    id: "driftwood",
-    name: "Driftwood Rod",
-    rarity: RARITY.COMMON,
-    resilience: 1,
-    control: 1,
-    luck: 0,
-    lureSpeed: 1,
-    progressSpeed: 1,
-    maxWeight: 10,
-    hazardResist: [],
-    variantBonus: 0
-  },
-  {
-    id: "prism",
-    name: "Prism Rod",
-    rarity: RARITY.EPIC,
-    resilience: 4,
-    control: 4,
-    luck: 3,
-    lureSpeed: 3,
-    progressSpeed: 3,
-    maxWeight: 80,
-    hazardResist: [],
-    variantBonus: 0.01
-  },
-  {
-    id: "nullcurrent",
-    name: "Nullcurrent Rod",
-    rarity: RARITY.EXOTIC,
-    resilience: 6,
-    control: 6,
-    luck: 6,
-    lureSpeed: 5,
-    progressSpeed: 5,
-    maxWeight: 999,
-    hazardResist: ["lava", "toxic", "abyss", "rift"],
-    variantBonus: 0.05
-  }
-];
+// Rods from JSON
+let currentRod = null;
 
-let currentRod = rods[0];
+function setDefaultRod() {
+  currentRod = DATA.rods.find(r => r.id === "driftwood") || DATA.rods[0];
+}
 
-// Simple fish tables per region
-const fishTables = {
-  harbor: [
-    { name: "Harbor Minnow", rarity: RARITY.COMMON },
-    { name: "Dock Perch", rarity: RARITY.COMMON },
-    { name: "Harbor Runner", rarity: RARITY.UNCOMMON },
-    { name: "Pier Snapper", rarity: RARITY.RARE }
-  ],
-  jungle: [
-    { name: "Reed Minnow", rarity: RARITY.COMMON },
-    { name: "Mossback Fry", rarity: RARITY.UNCOMMON },
-    { name: "Vine Pike", rarity: RARITY.RARE },
-    { name: "Emerald Ray", rarity: RARITY.EPIC }
-  ],
-  volcano: [
-    { name: "Ember Minnow", rarity: RARITY.COMMON },
-    { name: "Lava Perch", rarity: RARITY.UNCOMMON },
-    { name: "Volcanic Snapper", rarity: RARITY.RARE },
-    { name: "Ash Serpent", rarity: RARITY.EPIC },
-    { name: "Pyreback Titan", rarity: RARITY.LEGENDARY }
-  ]
-};
+// Fish tables from JSON
+function getFishTable(regionId) {
+  return DATA.fish[regionId] || DATA.fish["harbor"] || [];
+}
 
+// Region detection using JSON islands
 function getRegionIdAtPosition(pos) {
   let closest = null;
   let closestDist = Infinity;
-  for (const { island } of islandMeshes) {
-    const d = pos.distanceTo(island.position);
+
+  for (const island of DATA.islands) {
+    const ipos = new THREE.Vector3(island.position[0], island.position[1], island.position[2]);
+    const d = pos.distanceTo(ipos);
     if (d < closestDist) {
       closestDist = d;
       closest = island;
     }
   }
+
   if (!closest) return "ocean";
-  if (closestDist < closest.radius * 2.5) return closest.regionId;
+  if (closestDist < closest.radius * 2.5) return closest.id;
   return "ocean";
 }
 
 // ===== FISHING STATE =====
 let isFishing = false;
 let fishingCastTime = 0;
-let fishingState = "idle"; // idle, charging, waiting, hooked
+let fishingState = "idle";
 let fishingTimer = 0;
 let currentBobber = null;
 let currentHookedFish = null;
 
-// Bobber
 const bobberGeo = new THREE.SphereGeometry(0.3, 16, 16);
 const bobberMat = new THREE.MeshStandardMaterial({ color: 0xffb86c, emissive: 0x331100 });
 
@@ -341,9 +287,9 @@ let exoticDuration = 0;
 let exoticPosition = new THREE.Vector3();
 
 // ===== RADAR =====
-let radarFishPoints = []; // {x,z,rarity,variant}
+let radarFishPoints = [];
 
-// ===== TOTEM (WEATHER EVENT PLACEHOLDER) =====
+// ===== TOTEM =====
 const totemGeo = new THREE.CylinderGeometry(1, 1, 4, 6);
 const totemMat = new THREE.MeshStandardMaterial({ color: 0x4caf50, emissive: 0x002200 });
 const totem = new THREE.Mesh(totemGeo, totemMat);
@@ -351,7 +297,7 @@ totem.position.set(15, 0, 15);
 scene.add(totem);
 totem.userData.interactType = "totem";
 
-// ===== INTERACTION (E KEY) =====
+// ===== INTERACTION (E) =====
 const raycaster = new THREE.Raycaster();
 const interactDistance = 4;
 
@@ -441,7 +387,7 @@ function updateMovement(dt) {
   cameraPivot.rotation.x = pitch;
 }
 
-// ===== OXYGEN / UNDERWATER EFFECTS =====
+// ===== OXYGEN =====
 function updateOxygen(dt) {
   if (isUnderwater) {
     oxygen -= OXYGEN_DRAIN_RATE * dt;
@@ -463,22 +409,22 @@ function updateOxygen(dt) {
   }
 }
 
-// ===== HUD / GPS / ISLAND LABELS =====
+// ===== HUD =====
 function updateHUD() {
   const pos = player.position;
   const depth = Math.max(0, WATER_LEVEL - pos.y);
   const regionId = getRegionIdAtPosition(pos);
   let regionName = "Open Ocean";
-  const island = islands.find(i => i.regionId === regionId);
+  const island = DATA.islands.find(i => i.id === regionId);
   if (island) regionName = island.name;
 
   hudRegion.textContent = `Region: ${regionName}`;
   hudGPS.textContent = `X: ${pos.x.toFixed(0)} | Y: ${pos.y.toFixed(0)} | Z: ${pos.z.toFixed(0)}`;
   hudDepth.textContent = `Depth: ${depth.toFixed(1)}m`;
 
-  // Island labels fade in/out
   for (const { island, sprite } of islandLabels) {
-    const d = pos.distanceTo(island.position);
+    const ipos = new THREE.Vector3(island.position[0], island.position[1], island.position[2]);
+    const d = pos.distanceTo(ipos);
     const targetOpacity = d < island.radius * 3 ? 1 : 0;
     sprite.material.opacity += (targetOpacity - sprite.material.opacity) * 0.05;
   }
@@ -495,12 +441,10 @@ function showCatchAlert(rarity) {
   }, 600);
 }
 
-// ===== FISHING LOGIC (PROTOTYPE) =====
+// ===== FISHING =====
 function startFishing() {
   if (isFishing) return;
-  // Must be near water
   if (Math.abs(player.position.y - WATER_LEVEL) > 3) return;
-
   isFishing = true;
   fishingState = "charging";
   fishingCastTime = 0;
@@ -512,7 +456,6 @@ function updateFishing(dt, time) {
   if (fishingState === "charging") {
     fishingCastTime += dt;
     if (!keys["KeyE"]) {
-      // Cast
       const power = Math.min(1, fishingCastTime / 1.5);
       castBobber(power);
       fishingState = "waiting";
@@ -522,7 +465,6 @@ function updateFishing(dt, time) {
     fishingTimer += dt;
     const biteTime = 1.5 + Math.random() * 2.5;
     if (fishingTimer > biteTime) {
-      // Hooked
       const regionId = getRegionIdAtPosition(player.position);
       const fish = pickFish(regionId);
       currentHookedFish = fish;
@@ -533,12 +475,10 @@ function updateFishing(dt, time) {
   } else if (fishingState === "hooked") {
     fishingTimer += dt;
     if (fishingTimer > 4) {
-      // Fish got away
       endFishing();
     }
   }
 
-  // Bobber bobbing
   if (currentBobber) {
     currentBobber.position.y = WATER_LEVEL + 0.3 + Math.sin(time * 4) * 0.1;
   }
@@ -563,11 +503,12 @@ function castBobber(power) {
 }
 
 function pickFish(regionId) {
-  const table = fishTables[regionId] || fishTables["harbor"];
+  const table = getFishTable(regionId);
+  if (!table.length) return { name: "Nothing", rarity: RARITY.COMMON, variant: null };
+
   const fish = table[Math.floor(Math.random() * table.length)];
-  // Variant roll
   const baseChance = baseVariantChanceForRarity(fish.rarity);
-  const totalChance = baseChance + (currentRod.variantBonus || 0);
+  const totalChance = baseChance + (currentRod?.variantBonus || 0);
   let variant = null;
   if (Math.random() < totalChance) {
     variant = VARIANTS[Math.floor(Math.random() * VARIANTS.length)];
@@ -577,7 +518,6 @@ function pickFish(regionId) {
 
 function reelInFish() {
   if (!currentHookedFish) return;
-  // For now just log it
   console.log("Caught fish:", currentHookedFish);
   endFishing();
 }
@@ -594,10 +534,10 @@ function endFishing() {
   }
 }
 
-// ===== EXOTIC / DIVINE SPAWNS =====
+// ===== EXOTIC SPAWNS =====
 function triggerExoticSpawn() {
   exoticActive = true;
-  exoticDuration = 300 + Math.random() * 300; // 5–10 minutes (in seconds)
+  exoticDuration = 300 + Math.random() * 300;
   exoticTimer = 0;
   exoticPosition.set(
     (Math.random() - 0.5) * OCEAN_SIZE * 0.6,
@@ -628,7 +568,7 @@ function showBanner(text) {
 function updateRadarData() {
   radarFishPoints = [];
   const regionId = getRegionIdAtPosition(player.position);
-  const table = fishTables[regionId] || fishTables["harbor"];
+  const table = getFishTable(regionId);
   for (let i = 0; i < 12; i++) {
     const angle = Math.random() * Math.PI * 2;
     const dist = 10 + Math.random() * 60;
@@ -677,13 +617,11 @@ function drawRadar() {
   radarCtx.arc(cx, cy, (w / 2 - 6) * 0.33, 0, Math.PI * 2);
   radarCtx.stroke();
 
-  // Player center
   radarCtx.fillStyle = "#ffffff";
   radarCtx.beginPath();
   radarCtx.arc(cx, cy, 3, 0, Math.PI * 2);
   radarCtx.fill();
 
-  // Fish points
   for (const p of radarFishPoints) {
     const dx = p.x - player.position.x;
     const dz = p.z - player.position.z;
@@ -709,7 +647,7 @@ function drawRadar() {
   }
 }
 
-// ===== TOTEM WEATHER EVENT (VISUAL ONLY) =====
+// ===== WEATHER / TOTEM =====
 let weatherState = "clear";
 let weatherTimer = 0;
 
@@ -768,7 +706,11 @@ function loop(now) {
 }
 
 // ===== INIT =====
-function init() {
+async function init() {
+  await loadGameData();
+  setDefaultRod();
+  buildIslands();
+
   window.addEventListener("resize", () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
     camera.aspect = window.innerWidth / window.innerHeight;
