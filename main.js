@@ -1,11 +1,7 @@
-// =====================================================
-// Fisch Bucket Prototype - Expanded, Detailed Version
-// Better visuals, better gameplay, better design
-// =====================================================
+// Fisch Bucket — Reworked full JS
+// Movement, radar, hotbar toggles, inventory (E), aquarium (M), rods, lore, fishing minigame, persistence
 
-// ----------------------
-// DOM references
-// ----------------------
+// -------------------- DOM --------------------
 const canvas = document.getElementById("gameCanvas");
 const hudRegion = document.getElementById("hudRegion");
 const hudGPS = document.getElementById("hudGPS");
@@ -13,48 +9,46 @@ const hudDepth = document.getElementById("hudDepth");
 const hudCenterBanner = document.getElementById("hudCenterBanner");
 const catchAlert = document.getElementById("catchAlert");
 
-const panelRod = document.getElementById("panelRod");
-const panelToolBag = document.getElementById("panelToolBag");
-const panelBaitBag = document.getElementById("panelBaitBag");
-const panelBestiary = document.getElementById("panelBestiary");
-const panelQuest = document.getElementById("panelQuest");
-const panelTotems = document.getElementById("panelTotems");
-const panelPotions = document.getElementById("panelPotions");
-const panelRelic = document.getElementById("panelRelic");
-const panelUtility = document.getElementById("panelUtility");
-
-const btnRod = document.getElementById("btnRod");
-const btnToolBag = document.getElementById("btnToolBag");
-const btnBaitBag = document.getElementById("btnBaitBag");
-const btnBestiary = document.getElementById("btnBestiary");
-const btnQuest = document.getElementById("btnQuest");
-const btnTotems = document.getElementById("btnTotems");
-const btnPotions = document.getElementById("btnPotions");
-const btnRelic = document.getElementById("btnRelic");
-const btnUtility = document.getElementById("btnUtility");
-
 const hotbarSlots = Array.from(document.querySelectorAll(".hotbar-slot"));
+const panelMap = {
+  0: document.getElementById("panelRod"),
+  1: document.getElementById("panelBag"),
+  2: document.getElementById("panelBait"),
+  3: document.getElementById("panelBestiary"),
+  4: document.getElementById("panelQuests"),
+  5: document.getElementById("panelTotems"),
+  6: document.getElementById("panelPotions"),
+  7: document.getElementById("panelRelic"),
+  8: document.getElementById("panelUtility")
+};
+
+const panelInventory = document.getElementById("panelInventory");
+const panelAquarium = document.getElementById("panelAquarium");
 
 const radarArrow = document.getElementById("radarArrow");
 const radarLabel = document.getElementById("radarLabel");
 
-const rodList = document.getElementById("rodList");
-const baitList = document.getElementById("baitList");
-const toolList = document.getElementById("toolList");
-const questList = document.getElementById("questList");
-const totemList = document.getElementById("totemList");
-const potionList = document.getElementById("potionList");
-const relicInfo = document.getElementById("relicInfo");
-const utilityList = document.getElementById("utilityList");
+const rodListEl = document.getElementById("rodList");
+const bagListEl = document.getElementById("bagList");
+const baitListEl = document.getElementById("baitList");
+const bestiaryFishEl = document.getElementById("bestiaryFish");
+const bestiaryRodsEl = document.getElementById("bestiaryRods");
+const bestiaryIslandsEl = document.getElementById("bestiaryIslands");
+const bestiaryTabs = document.querySelectorAll("#bestiaryTabs .tab");
 
-const bestiaryTabs = document.getElementById("bestiaryTabs");
-const bestiaryFish = document.getElementById("bestiaryFish");
-const bestiaryRods = document.getElementById("bestiaryRods");
-const bestiaryIslands = document.getElementById("bestiaryIslands");
+const fishingMinigame = document.getElementById("fishingMinigame");
+const minigameZone = document.getElementById("minigameZone");
+const minigameCursor = document.getElementById("minigameCursor");
+const minigameReel = document.getElementById("minigameReel");
+const minigameCancel = document.getElementById("minigameCancel");
+const minigameHint = document.getElementById("minigameHint");
 
-// ----------------------
-// Core data definitions
-// ----------------------
+const aquariumSlotsEl = document.getElementById("aquariumSlots");
+const aquariumInfoEl = document.getElementById("aquariumInfo");
+const collectAquariumBtn = document.getElementById("collectAquarium");
+const nextPayoutEl = document.getElementById("nextPayout");
+
+// -------------------- Data --------------------
 const RARITY = {
   COMMON: "common",
   UNCOMMON: "uncommon",
@@ -75,698 +69,255 @@ const rarityColors = {
   [RARITY.EXOTIC]: "#ff00ff"
 };
 
-const VARIANTS = [
-  "sparkling",
-  "shiny",
-  "rainbow",
-  "gold",
-  "silver",
-  "translucent",
-  "ghastly",
-  "dirty",
-  "frozen"
-];
-
-// Rods expanded with more detail
+// Rods with stats and lore
 const RODS = [
-  {
-    id: "driftwood",
-    name: "Driftwood Rod",
-    rarity: RARITY.COMMON,
-    variantBonus: 0.0,
-    color: 0x8d6e63,
-    desc: "A simple rod made from washed-up driftwood. Reliable, but nothing special.",
-    control: "Basic control, no special effects."
-  },
-  {
-    id: "harborOak",
-    name: "Harbor Oak Rod",
-    rarity: RARITY.UNCOMMON,
-    variantBonus: 0.002,
-    color: 0x6d4c41,
-    desc: "Carved from old harbor oak. Slightly steadier bite timing.",
-    control: "Smoother bite window for common harbor fish."
-  },
-  {
-    id: "prism",
-    name: "Prism Rod",
-    rarity: RARITY.EPIC,
-    variantBonus: 0.01,
-    color: 0x9c27b0,
-    desc: "Refracts light beneath the waves, slightly increasing the chance of variant fish.",
-    control: "Subtle glow on rare bites."
-  },
-  {
-    id: "nullcurrent",
-    name: "Nullcurrent Rod",
-    rarity: RARITY.EXOTIC,
-    variantBonus: 0.05,
-    color: 0x00e5ff,
-    desc: "A rod that bends currents around it, greatly boosting variant encounters.",
-    control: "More stable bobber, higher variant chance."
-  }
+  { id:"driftwood", name:"Driftwood", rarity:RARITY.COMMON, variantBonus:0.0, color:0x8d6e63, power:1.0, control:0.9, lore:"A salvaged rod from old piers. It carries the scent of salt and stories." },
+  { id:"harborOak", name:"Harbor Oak", rarity:RARITY.UNCOMMON, variantBonus:0.003, color:0x6d4c41, power:1.12, control:1.02, lore:"Carved from oak that watched over the harbor for generations." },
+  { id:"prism", name:"Prism Rod", rarity:RARITY.EPIC, variantBonus:0.01, color:0x9c27b0, power:1.25, control:1.12, lore:"Shards of light trapped in the shaft; fish are drawn to its shimmer." },
+  { id:"nullcurrent", name:"Nullcurrent", rarity:RARITY.EXOTIC, variantBonus:0.05, color:0x00e5ff, power:1.5, control:1.3, lore:"A rod rumored to bend currents; prized by those who chase the impossible." }
 ];
 
-const BAITS = [
-  { id: "basic", name: "Basic Bait", rarity: RARITY.COMMON, desc: "Standard bait. Works anywhere, but nothing fancy." },
-  { id: "harborShrimp", name: "Harbor Shrimp", rarity: RARITY.UNCOMMON, desc: "Favored by harbor fish. Slightly boosts harbor catches." },
-  { id: "jungleGrub", name: "Jungle Grub", rarity: RARITY.UNCOMMON, desc: "Sticky jungle bait. Attracts jungle species." },
-  { id: "emberWorm", name: "Ember Worm", rarity: RARITY.RARE, desc: "Glows faintly. Volcano fish love it." }
-];
-
-const TOOLS = [
-  { id: "net", name: "Landing Net", desc: "Helps secure larger fish once hooked." },
-  { id: "scale", name: "Precision Scale", desc: "Measures fish weight for records." },
-  { id: "lineKit", name: "Line Repair Kit", desc: "Reduces chance of line snapping on big catches." }
-];
-
-const POTIONS = [
-  { id: "luck", name: "Potion of Luck", desc: "Temporarily increases rare fish chance." },
-  { id: "clarity", name: "Potion of Clarity", desc: "Highlights bite timing in the fishing minigame." },
-  { id: "depth", name: "Potion of Depthsense", desc: "Makes deep fish slightly easier to hook." }
-];
-
-const TOTEMS = [
-  { id: "storm", name: "Storm Totem", desc: "Summons rough seas, changing fish behavior." },
-  { id: "calm", name: "Calm Totem", desc: "Smooths the waters, easier fishing but fewer exotics." },
-  { id: "tide", name: "Tide Totem", desc: "Shifts currents, altering which fish appear." }
-];
-
-const UTILITIES = [
-  { id: "campfire", name: "Portable Campfire", desc: "A place to rest and cook fish." },
-  { id: "beacon", name: "Sea Beacon", desc: "Marks a location in the ocean." },
-  { id: "flare", name: "Signal Flare", desc: "Marks the sky above your position." }
-];
-
-const RELIC = {
-  id: "ancientKey",
-  name: "Ancient Relic Key",
-  desc: "Said to unlock a forgotten trench somewhere beyond the known islands."
-};
-
-// Islands with positions and types
-const ISLANDS = [
-  {
-    id: "harbor",
-    name: "Harbor's Rest",
-    position: [0, -5, 0],
-    radius: 120,
-    type: "harbor"
-  },
-  {
-    id: "jungle",
-    name: "Verdant Reach",
-    position: [400, -5, 250],
-    radius: 140,
-    type: "jungle"
-  },
-  {
-    id: "volcano",
-    name: "Ashspire Isle",
-    position: [-500, -5, -300],
-    radius: 150,
-    type: "volcano"
-  }
-];
-
-// Fish tables per region
+// Fish tables with lore
 const FISH_TABLES = {
   harbor: [
-    { name: "Harbor Minnow", rarity: RARITY.COMMON, depth: "surface" },
-    { name: "Dock Perch", rarity: RARITY.COMMON, depth: "surface" },
-    { name: "Pier Snapper", rarity: RARITY.RARE, depth: "mid" },
-    { name: "Tide Barracuda", rarity: RARITY.EPIC, depth: "mid" },
-    { name: "Harbor Leviathan", rarity: RARITY.LEGENDARY, depth: "deep" }
+    { name:"Harbor Minnow", rarity:RARITY.COMMON, depth:"surface", lore:"Tiny and quick, common near docks." },
+    { name:"Dock Perch", rarity:RARITY.COMMON, depth:"surface", lore:"A sturdy perch that hides under pilings." },
+    { name:"Pier Snapper", rarity:RARITY.RARE, depth:"mid", lore:"Snaps at bait with surprising force." },
+    { name:"Tide Barracuda", rarity:RARITY.EPIC, depth:"mid", lore:"A sleek hunter of the harbor's edges." },
+    { name:"Harbor Leviathan", rarity:RARITY.LEGENDARY, depth:"deep", lore:"A whispered giant that patrols the deep channel." }
   ],
   jungle: [
-    { name: "Reed Minnow", rarity: RARITY.COMMON, depth: "surface" },
-    { name: "Mossback Fry", rarity: RARITY.UNCOMMON, depth: "surface" },
-    { name: "Vine Pike", rarity: RARITY.RARE, depth: "mid" },
-    { name: "Emerald Ray", rarity: RARITY.EPIC, depth: "mid" },
-    { name: "Verdant Serpent", rarity: RARITY.LEGENDARY, depth: "deep" }
+    { name:"Reed Minnow", rarity:RARITY.COMMON, depth:"surface", lore:"Lives among the reeds and lily pads." },
+    { name:"Mossback Fry", rarity:RARITY.UNCOMMON, depth:"surface", lore:"Camouflaged with mossy scales." },
+    { name:"Vine Pike", rarity:RARITY.RARE, depth:"mid", lore:"Ambush predator among submerged roots." },
+    { name:"Emerald Ray", rarity:RARITY.EPIC, depth:"mid", lore:"Glows faintly under moonlight." },
+    { name:"Verdant Serpent", rarity:RARITY.LEGENDARY, depth:"deep", lore:"A long serpent said to guard ancient groves." }
   ],
   volcano: [
-    { name: "Ember Minnow", rarity: RARITY.COMMON, depth: "surface" },
-    { name: "Lava Perch", rarity: RARITY.UNCOMMON, depth: "surface" },
-    { name: "Volcanic Snapper", rarity: RARITY.RARE, depth: "mid" },
-    { name: "Ash Serpent", rarity: RARITY.EPIC, depth: "deep" },
-    { name: "Infernal Leviathan", rarity: RARITY.MYTHIC, depth: "deep" }
+    { name:"Ember Minnow", rarity:RARITY.COMMON, depth:"surface", lore:"Warmth-loving minnows near hot springs." },
+    { name:"Lava Perch", rarity:RARITY.UNCOMMON, depth:"surface", lore:"Scales like cooled magma." },
+    { name:"Volcanic Snapper", rarity:RARITY.RARE, depth:"mid", lore:"Bites with molten speed." },
+    { name:"Ash Serpent", rarity:RARITY.EPIC, depth:"deep", lore:"A serpent that swims through smoke." },
+    { name:"Infernal Leviathan", rarity:RARITY.MYTHIC, depth:"deep", lore:"A beast born from the heart of the mountain." }
   ],
   ocean: [
-    { name: "Open Sea Minnow", rarity: RARITY.COMMON, depth: "surface" },
-    { name: "Blueback Runner", rarity: RARITY.UNCOMMON, depth: "mid" },
-    { name: "Oceanic Ray", rarity: RARITY.RARE, depth: "mid" },
-    { name: "Deep Sea Serpent", rarity: RARITY.EPIC, depth: "deep" },
-    { name: "Abyssal Sovereign", rarity: RARITY.MYTHIC, depth: "abyss" }
+    { name:"Open Sea Minnow", rarity:RARITY.COMMON, depth:"surface", lore:"Small fish of the open blue." },
+    { name:"Blueback Runner", rarity:RARITY.UNCOMMON, depth:"mid", lore:"Fast and elusive in open water." },
+    { name:"Oceanic Ray", rarity:RARITY.RARE, depth:"mid", lore:"A graceful ray that glides in currents." },
+    { name:"Deep Sea Serpent", rarity:RARITY.EPIC, depth:"deep", lore:"A rare deepwater hunter." },
+    { name:"Abyssal Sovereign", rarity:RARITY.MYTHIC, depth:"abyss", lore:"Ruler of the abyssal plains." }
   ]
 };
 
-// Discovery tracking
-let discoveredIslands = new Set(["harbor"]);
+// Fisch-style spawn zones
+const FISH_SPAWN_ZONES = {
+  harbor: [ new THREE.Vector3(40,0,80), new THREE.Vector3(-60,0,20), new THREE.Vector3(20,0,-90) ],
+  jungle: [ new THREE.Vector3(420,0,260), new THREE.Vector3(380,0,200), new THREE.Vector3(450,0,300) ],
+  volcano: [ new THREE.Vector3(-520,0,-310), new THREE.Vector3(-480,0,-260), new THREE.Vector3(-550,0,-350) ],
+  ocean: [ new THREE.Vector3(200,0,-400), new THREE.Vector3(-300,0,500), new THREE.Vector3(600,0,200) ]
+};
+
+// discovery & player state
 let discoveredFish = new Set();
 let discoveredRods = new Set(["driftwood"]);
+let discoveredIslands = new Set(["harbor"]);
 
-// Current rod and hotbar
 let currentRod = RODS[0];
-let selectedHotbarSlot = 0;
+let currentBait = null;
+let playerCash = 0;
 
-// ----------------------
-// Three.js setup
-// ----------------------
+// inventory & aquarium
+let inventory = [];
+const AQUARIUM_SLOT_COUNT = 6;
+let aquarium = {
+  slots: Array.from({length:AQUARIUM_SLOT_COUNT}, ()=>null),
+  lastPayout: Date.now()
+};
+
+// persistence
+const SAVE_KEY = "fisch_rework_v2";
+
+// -------------------- Three.js scene --------------------
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setClearColor(0x0a0c18);
+renderer.setClearColor(0x071026);
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x0a0c18, 0.0018);
+scene.fog = new THREE.FogExp2(0x071026, 0.0018);
 
-// Day-night cycle color targets
-const daySkyColor = new THREE.Color(0x87cefa);
-const nightSkyColor = new THREE.Color(0x02030a);
-const dayFogColor = new THREE.Color(0x0a1a2a);
-const nightFogColor = new THREE.Color(0x02030a);
-
-// Camera hierarchy
-const camera = new THREE.PerspectiveCamera(
-  70,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  4000
-);
-
+const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.1, 4000);
 const cameraHolder = new THREE.Object3D();
 const cameraPivot = new THREE.Object3D();
 cameraHolder.add(cameraPivot);
 cameraPivot.add(camera);
 scene.add(cameraHolder);
 
-// Player object
 const player = new THREE.Object3D();
-player.position.set(0, 20, 0);
+player.position.set(0,20,0);
 scene.add(player);
 
-// Camera initial placement
-camera.position.set(0, 3, -6);
-cameraPivot.position.set(0, 2, 0);
+camera.position.set(0,3,-6);
+cameraPivot.position.set(0,2,0);
 cameraHolder.position.copy(player.position);
 
-// Lights
 const hemi = new THREE.HemisphereLight(0xbfd8ff, 0x0b1020, 0.8);
 scene.add(hemi);
-
-const sun = new THREE.DirectionalLight(0xffffff, 1.0);
-sun.position.set(100, 200, 80);
-sun.castShadow = true;
+const sun = new THREE.DirectionalLight(0xffffff, 0.9);
+sun.position.set(100,200,80);
 scene.add(sun);
 
-// ----------------------
-// World / water / islands
-// ----------------------
+// water plane
 const OCEAN_SIZE = 4000;
 const WATER_LEVEL = 0;
 const BORDER_RADIUS = 1800;
-
-// Water plane
 const waterGeo = new THREE.PlaneGeometry(OCEAN_SIZE, OCEAN_SIZE, 128, 128);
-const waterMat = new THREE.MeshPhongMaterial({
-  color: 0x1b4f72,
-  emissive: 0x000000,
-  shininess: 80,
-  transparent: true,
-  opacity: 0.9
-});
+const waterMat = new THREE.MeshPhongMaterial({ color:0x1b4f72, shininess:80, transparent:true, opacity:0.9 });
 const water = new THREE.Mesh(waterGeo, waterMat);
-water.rotation.x = -Math.PI / 2;
+water.rotation.x = -Math.PI/2;
 water.position.y = WATER_LEVEL;
-water.receiveShadow = true;
 scene.add(water);
 
-// Simple underwater tint plane (for when camera goes below water)
-const underwaterOverlay = new THREE.Mesh(
-  new THREE.PlaneGeometry(2, 2),
-  new THREE.MeshBasicMaterial({
-    color: 0x001a33,
-    transparent: true,
-    opacity: 0
-  })
-);
-underwaterOverlay.position.z = -1;
-camera.add(underwaterOverlay);
+// islands
+const ISLANDS = [
+  { id:"harbor", name:"Harbor's Rest", position:[0,-5,0], radius:120, type:"harbor" },
+  { id:"jungle", name:"Verdant Reach", position:[400,-5,250], radius:140, type:"jungle" },
+  { id:"volcano", name:"Ashspire Isle", position:[-500,-5,-300], radius:150, type:"volcano" }
+];
 
-// Water animation
-function updateWater(time) {
-  const pos = water.geometry.attributes.position;
-  for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i);
-    const z = pos.getZ(i);
-    const wave =
-      Math.sin((x + time * 20) * 0.002) * 0.3 +
-      Math.cos((z + time * 15) * 0.002) * 0.3 +
-      Math.sin((x + z + time * 10) * 0.0015) * 0.2;
-    pos.setY(i, wave);
-  }
-  pos.needsUpdate = true;
-  water.geometry.computeVertexNormals();
-}
-
-// Island labels
 const islandLabels = [];
-
-function createIslandLabel(text) {
-  const canvas = document.createElement("canvas");
-  canvas.width = 256;
-  canvas.height = 64;
-  const ctx = canvas.getContext("2d");
-
-  ctx.fillStyle = "rgba(0,0,0,0.6)";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "24px system-ui";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(text, canvas.width / 2, canvas.height / 2);
-
-  const tex = new THREE.CanvasTexture(canvas);
-  const sprite = new THREE.Sprite(
-    new THREE.SpriteMaterial({ map: tex, transparent: true })
-  );
-  sprite.scale.set(80, 20, 1);
-  sprite.material.opacity = 0;
+function createIslandLabel(text){
+  const c = document.createElement("canvas"); c.width=256; c.height=64;
+  const ctx = c.getContext("2d");
+  ctx.fillStyle="rgba(0,0,0,0.6)"; ctx.fillRect(0,0,c.width,c.height);
+  ctx.fillStyle="#fff"; ctx.font="22px system-ui"; ctx.textAlign="center"; ctx.textBaseline="middle";
+  ctx.fillText(text,c.width/2,c.height/2);
+  const tex = new THREE.CanvasTexture(c);
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map:tex, transparent:true }));
+  sprite.scale.set(80,20,1); sprite.material.opacity=0;
   return sprite;
 }
 
-// Harbor details
-function addHarborDetails(basePos) {
-  const dockGeo = new THREE.BoxGeometry(40, 1, 10);
-  const dockMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b });
-  const dock = new THREE.Mesh(dockGeo, dockMat);
-  dock.position.set(basePos.x + 20, basePos.y + 1, basePos.z);
-  dock.castShadow = true;
-  dock.receiveShadow = true;
-  scene.add(dock);
-
-  const crateGeo = new THREE.BoxGeometry(3, 3, 3);
-  const crateMat = new THREE.MeshStandardMaterial({ color: 0x6d4c41 });
-  for (let i = 0; i < 4; i++) {
-    const crate = new THREE.Mesh(crateGeo, crateMat);
-    crate.position.set(
-      basePos.x + 10 + i * 3,
-      basePos.y + 2,
-      basePos.z + (i % 2 === 0 ? 4 : -4)
-    );
-    crate.castShadow = true;
-    crate.receiveShadow = true;
-    scene.add(crate);
-  }
-
-  const lampGeo = new THREE.CylinderGeometry(0.2, 0.2, 6, 8);
-  const lampMat = new THREE.MeshStandardMaterial({ color: 0x4e342e });
-  const lamp = new THREE.Mesh(lampGeo, lampMat);
-  lamp.position.set(basePos.x + 30, basePos.y + 4, basePos.z - 3);
-  scene.add(lamp);
-
-  const lampLight = new THREE.PointLight(0xfff2b2, 1.2, 40);
-  lampLight.position.set(basePos.x + 30, basePos.y + 7, basePos.z - 3);
-  scene.add(lampLight);
-}
-
-// Jungle details
-function addJungleDetails(basePos) {
-  const trunkGeo = new THREE.CylinderGeometry(0.8, 1.2, 8, 6);
-  const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5b3a1a });
-  const leafGeo = new THREE.ConeGeometry(4, 6, 8);
-  const leafMat = new THREE.MeshStandardMaterial({ color: 0x2e7d32 });
-
-  for (let i = 0; i < 9; i++) {
-    const t = new THREE.Mesh(trunkGeo, trunkMat);
-    const l = new THREE.Mesh(leafGeo, leafMat);
-    const angle = (i / 9) * Math.PI * 2;
-    const r = 20 + Math.random() * 10;
-    const x = basePos.x + Math.cos(angle) * r;
-    const z = basePos.z + Math.sin(angle) * r;
-    t.position.set(x, basePos.y + 4, z);
-    l.position.set(x, basePos.y + 9, z);
-    t.castShadow = true;
-    t.receiveShadow = true;
-    l.castShadow = true;
-    l.receiveShadow = true;
-    scene.add(t);
-    scene.add(l);
-  }
-}
-
-// Volcano details
-function addVolcanoDetails(basePos) {
-  const coneGeo = new THREE.ConeGeometry(40, 40, 16);
-  const coneMat = new THREE.MeshStandardMaterial({ color: 0x4e342e });
-  const cone = new THREE.Mesh(coneGeo, coneMat);
-  cone.position.set(basePos.x, basePos.y + 25, basePos.z);
-  cone.castShadow = true;
-  cone.receiveShadow = true;
-  scene.add(cone);
-
-  const lavaGeo = new THREE.CircleGeometry(10, 16);
-  const lavaMat = new THREE.MeshBasicMaterial({ color: 0xff5722 });
-  const lava = new THREE.Mesh(lavaGeo, lavaMat);
-  lava.rotation.x = -Math.PI / 2;
-  lava.position.set(basePos.x, basePos.y + 45, basePos.z);
-  scene.add(lava);
-}
-
-// Build islands
-function buildIslands() {
-  for (const island of ISLANDS) {
-    let mesh;
-    const basePos = new THREE.Vector3(...island.position);
-
-    if (island.type === "harbor") {
-      const geo = new THREE.DodecahedronGeometry(island.radius * 0.6);
-      const mat = new THREE.MeshStandardMaterial({ color: 0x9ccc65 });
-      mesh = new THREE.Mesh(geo, mat);
-      mesh.scale.y = 0.3;
-      mesh.position.copy(basePos);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      scene.add(mesh);
-      addHarborDetails(basePos);
-    } else if (island.type === "jungle") {
-      const geo = new THREE.DodecahedronGeometry(island.radius * 0.7);
-      const mat = new THREE.MeshStandardMaterial({ color: 0x43a047 });
-      mesh = new THREE.Mesh(geo, mat);
-      mesh.scale.y = 0.4;
-      mesh.position.copy(basePos);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      scene.add(mesh);
-      addJungleDetails(basePos);
-    } else if (island.type === "volcano") {
-      const geo = new THREE.DodecahedronGeometry(island.radius * 0.6);
-      const mat = new THREE.MeshStandardMaterial({ color: 0x6d4c41 });
-      mesh = new THREE.Mesh(geo, mat);
-      mesh.scale.y = 0.5;
-      mesh.position.copy(basePos);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      scene.add(mesh);
-      addVolcanoDetails(basePos);
-    }
-
-    const label = createIslandLabel(island.name);
-    label.position.set(basePos.x, basePos.y + 30, basePos.z);
-    island.label = label;
+function buildIslands(){
+  for(const isl of ISLANDS){
+    const base = new THREE.Vector3(...isl.position);
+    const geo = new THREE.DodecahedronGeometry(isl.radius*0.6);
+    const mat = new THREE.MeshStandardMaterial({ color: isl.type==="volcano"?0x6d4c41: isl.type==="jungle"?0x43a047:0x9ccc65 });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.scale.y = isl.type==="harbor"?0.3: isl.type==="jungle"?0.4:0.5;
+    mesh.position.copy(base);
+    scene.add(mesh);
+    const label = createIslandLabel(isl.name);
+    label.position.set(base.x, base.y+30, base.z);
     scene.add(label);
-    islandLabels.push({ island, sprite: label });
+    islandLabels.push({ island:isl, sprite:label });
   }
 }
 
-// Control sign near spawn
-function createControlSign() {
-  const signGeo = new THREE.BoxGeometry(10, 6, 1);
-  const canvas = document.createElement("canvas");
-  canvas.width = 512;
-  canvas.height = 256;
-  const ctx = canvas.getContext("2d");
-
-  ctx.fillStyle = "#3b2a1a";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "28px system-ui";
-  ctx.textAlign = "center";
-
-  ctx.fillText("Controls", 256, 40);
-  ctx.font = "22px system-ui";
-  ctx.fillText("WASD — Move", 256, 100);
-  ctx.fillText("Right Click — Look", 256, 140);
-  ctx.fillText("E — Interact / Fish", 256, 180);
-  ctx.fillText("Space — Jump", 256, 220);
-
-  const tex = new THREE.CanvasTexture(canvas);
-  const mat = new THREE.MeshBasicMaterial({ map: tex });
-  const sign = new THREE.Mesh(signGeo, mat);
-
-  sign.position.set(0, 12, -20);
-  sign.castShadow = true;
-  scene.add(sign);
-}
-
-// ----------------------
-// Rod model in first person
-// ----------------------
-let rodMesh = null;
-
-function createRodMesh() {
-  const rodGeo = new THREE.CylinderGeometry(0.06, 0.08, 5, 10);
-  const rodMat = new THREE.MeshStandardMaterial({
-    color: currentRod.color,
-    metalness: 0.2,
-    roughness: 0.4
-  });
-
-  const handleGeo = new THREE.CylinderGeometry(0.18, 0.2, 1.6, 10);
-  const handleMat = new THREE.MeshStandardMaterial({
-    color: 0x4e342e,
-    roughness: 0.8
-  });
-
-  const reelBodyGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.4, 16);
-  const reelBodyMat = new THREE.MeshStandardMaterial({
-    color: 0x212121,
-    metalness: 0.6,
-    roughness: 0.3
-  });
-
-  const reelArmGeo = new THREE.BoxGeometry(0.1, 0.6, 0.1);
-  const reelArmMat = new THREE.MeshStandardMaterial({
-    color: 0xbdbdbd,
-    metalness: 0.8,
-    roughness: 0.2
-  });
-
-  const lineGeo = new THREE.CylinderGeometry(0.01, 0.01, 4, 6);
-  const lineMat = new THREE.MeshBasicMaterial({ color: 0xe0f7fa });
-
-  const rod = new THREE.Mesh(rodGeo, rodMat);
-  const handle = new THREE.Mesh(handleGeo, handleMat);
-  const reelBody = new THREE.Mesh(reelBodyGeo, reelBodyMat);
-  const reelArm = new THREE.Mesh(reelArmGeo, reelArmMat);
-  const line = new THREE.Mesh(lineGeo, lineMat);
-
-  const group = new THREE.Group();
-
-  rod.position.y = 2.4;
-  handle.position.y = 0.6;
-  reelBody.position.set(-0.25, 1.0, 0.0);
-  reelBody.rotation.z = Math.PI / 2;
-  reelArm.position.set(-0.25, 1.5, 0.0);
-  line.position.set(0, 4.5, 0.4);
-  line.rotation.x = Math.PI / 2;
-
-  group.add(rod);
-  group.add(handle);
-  group.add(reelBody);
-  group.add(reelArm);
-  group.add(line);
-
-  group.position.set(0.7, 1.4, 0.6);
-  group.rotation.z = -Math.PI / 4;
-  group.rotation.y = Math.PI / 10;
-
-  cameraPivot.add(group);
-  rodMesh = group;
-}
-
-function updateRodAppearance() {
-  if (!rodMesh) return;
-  rodMesh.traverse(child => {
-    if (child.isMesh && child.geometry instanceof THREE.CylinderGeometry) {
-      if (Math.abs(child.geometry.parameters.height - 5) < 0.01) {
-        child.material.color.setHex(currentRod.color);
-      }
-    }
-  });
-}
-
-// ----------------------
-// Region / fish tables
-// ----------------------
-function getRegionIdAtPosition(pos) {
-  let closest = null;
-  let closestDist = Infinity;
-
-  for (const island of ISLANDS) {
-    const ipos = new THREE.Vector3(...island.position);
-    const d = pos.distanceTo(ipos);
-    if (d < closestDist) {
-      closestDist = d;
-      closest = island;
-    }
-  }
-
-  if (!closest) return "ocean";
-  if (closestDist < closest.radius * 2.5) return closest.id;
-  return "ocean";
-}
-
-function getFishTable(regionId) {
-  return FISH_TABLES[regionId] || FISH_TABLES["ocean"];
-}
-
-// ----------------------
-// Movement & camera
-// ----------------------
-let yaw = 0;
-let pitch = 0;
-let rightMouseDown = false;
-
+// -------------------- Movement --------------------
+let yaw = 0, pitch = 0, rightMouseDown = false;
 const keys = {};
-document.addEventListener("keydown", e => (keys[e.code] = true));
-document.addEventListener("keyup", e => (keys[e.code] = false));
+document.addEventListener("keydown", e => { keys[e.code] = true; });
+document.addEventListener("keyup", e => { keys[e.code] = false; });
 
-canvas.addEventListener("contextmenu", e => e.preventDefault());
-canvas.addEventListener("mousedown", e => {
-  if (e.button === 2) rightMouseDown = true;
-});
-document.addEventListener("mouseup", e => {
-  if (e.button === 2) rightMouseDown = false;
-});
+canvas.addEventListener("contextmenu", e=>e.preventDefault());
+canvas.addEventListener("mousedown", e => { if(e.button===2) rightMouseDown=true; });
+document.addEventListener("mouseup", e => { if(e.button===2) rightMouseDown=false; });
 
 document.addEventListener("mousemove", e => {
-  if (!rightMouseDown) return;
+  if(!rightMouseDown) return;
   yaw += e.movementX * 0.002;
   pitch -= e.movementY * 0.002;
-  pitch = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, pitch));
+  pitch = Math.max(-Math.PI/3, Math.min(Math.PI/3, pitch));
 });
 
 let velocityY = 0;
 const gravity = -25;
 let cameraBobTime = 0;
 
-function updateMovement(dt) {
-  let forward = 0;
-  let right = 0;
-
-  if (keys["KeyW"] || keys["ArrowUp"]) forward += 1;
-  if (keys["KeyS"] || keys["ArrowDown"]) forward -= 1;
-  if (keys["KeyA"] || keys["ArrowLeft"]) right -= 1;
-  if (keys["KeyD"] || keys["ArrowRight"]) right += 1;
+function updateMovement(dt){
+  let forward=0, right=0;
+  if(keys["KeyW"]||keys["ArrowUp"]) forward+=1;
+  if(keys["KeyS"]||keys["ArrowDown"]) forward-=1;
+  if(keys["KeyA"]||keys["ArrowLeft"]) right-=1;
+  if(keys["KeyD"]||keys["ArrowRight"]) right+=1;
 
   const dir = new THREE.Vector3();
   camera.getWorldDirection(dir);
-  dir.y = 0;
-  dir.normalize();
+  dir.y = 0; dir.normalize();
 
-  const rightDir = new THREE.Vector3(dir.z, 0, -dir.x);
+  // FIXED right vector: A = left, D = right
+  const rightDir = new THREE.Vector3(-dir.z, 0, dir.x);
 
   const move = new THREE.Vector3();
-  // FIX: W moves forward, S moves backward (no inversion)
   move.addScaledVector(dir, forward);
   move.addScaledVector(rightDir, right);
-  if (move.length() > 0) move.normalize();
+  if(move.length()>0) move.normalize();
 
   const speed = 12;
-
   velocityY += gravity * dt;
-  if (keys["Space"] && player.position.y <= 20.1) velocityY = 10;
+  if(keys["Space"] && player.position.y <= 20.1) velocityY = 10;
 
   player.position.x += move.x * speed * dt;
   player.position.z += move.z * speed * dt;
   player.position.y += velocityY * dt;
 
-  if (player.position.y < 20) {
-    player.position.y = 20;
-    velocityY = 0;
-  }
+  if(player.position.y < 20){ player.position.y = 20; velocityY = 0; }
 
-  const r = Math.sqrt(player.position.x ** 2 + player.position.z ** 2);
-  if (r > BORDER_RADIUS) {
-    const scale = BORDER_RADIUS / r;
-    player.position.x *= scale;
-    player.position.z *= scale;
-  }
+  const r = Math.sqrt(player.position.x**2 + player.position.z**2);
+  if(r > BORDER_RADIUS){ const scale = BORDER_RADIUS / r; player.position.x *= scale; player.position.z *= scale; }
 
   cameraHolder.position.copy(player.position);
   cameraHolder.rotation.y = yaw;
   cameraPivot.rotation.x = pitch;
 
-  if (move.length() > 0) {
-    cameraBobTime += dt * 8;
-    const bobOffset = Math.sin(cameraBobTime) * 0.05;
-    camera.position.y = 3 + bobOffset;
-  } else {
-    cameraBobTime *= 0.9;
-    camera.position.y = 3;
-  }
+  if(move.length()>0){ cameraBobTime += dt*8; camera.position.y = 3 + Math.sin(cameraBobTime)*0.05; } else { cameraBobTime *= 0.9; camera.position.y = 3; }
 
-  const camWorldPos = new THREE.Vector3();
-  camera.getWorldPosition(camWorldPos);
-  if (camWorldPos.y < WATER_LEVEL - 0.5) {
-    underwaterOverlay.material.opacity = 0.35;
-  } else {
-    underwaterOverlay.material.opacity = 0;
+  // island label fade
+  for(const {island,sprite} of islandLabels){
+    const ipos = new THREE.Vector3(...island.position);
+    const d = player.position.distanceTo(ipos);
+    const target = d < island.radius*3 ? 1 : 0;
+    sprite.material.opacity += (target - sprite.material.opacity) * 0.06;
   }
 }
 
-// ----------------------
-// HUD updates
-// ----------------------
-function updateHUD() {
-  const pos = player.position;
-  const depth = Math.max(0, WATER_LEVEL - pos.y);
-  const regionId = getRegionIdAtPosition(pos);
-  const island = ISLANDS.find(i => i.id === regionId);
-
-  if (island && !discoveredIslands.has(island.id)) {
-    discoveredIslands.add(island.id);
-    showBanner(`Discovered: ${island.name}`);
-  }
-
-  hudRegion.textContent = `Region: ${island ? island.name : "Open Ocean"}`;
-  hudGPS.textContent = `X: ${pos.x.toFixed(0)} | Y: ${pos.y.toFixed(0)} | Z: ${pos.z.toFixed(0)}`;
-  hudDepth.textContent = `Depth: ${depth.toFixed(1)}m`;
-
-  for (const { island: isl, sprite } of islandLabels) {
-    const ipos = new THREE.Vector3(...isl.position);
-    const d = pos.distanceTo(ipos);
-    const targetOpacity = d < isl.radius * 3 ? 1 : 0;
-    sprite.material.opacity += (targetOpacity - sprite.material.opacity) * 0.05;
-  }
+// -------------------- HUD helpers --------------------
+function showBanner(text, time=3500){
+  hudCenterBanner.textContent = text;
+  hudCenterBanner.style.opacity = "1";
+  hudCenterBanner.classList.remove("hidden");
+  setTimeout(()=> { hudCenterBanner.style.opacity = "0"; }, time);
 }
 
-// ----------------------
-// Catch alert
-// ----------------------
-function showCatchAlert(rarity) {
-  const color = rarityColors[rarity] || "#ffffff";
-  catchAlert.style.borderColor = color;
-  catchAlert.style.color = color;
-  catchAlert.style.opacity = "1";
-  catchAlert.style.animation = "catchPulse 0.4s alternate 2";
-  setTimeout(() => {
-    catchAlert.style.opacity = "0";
-    catchAlert.style.animation = "none";
-  }, 700);
+// -------------------- Fishing system --------------------
+let isFishing=false, fishingState="idle", fishingCastTime=0, fishingTimer=0;
+let currentBobber=null, currentHookedFish=null;
+
+const bobberGeo = new THREE.SphereGeometry(0.28, 12, 12);
+const bobberMat = new THREE.MeshStandardMaterial({ color:0xffb86c, emissive:0x331100 });
+
+function startFishing(){
+  if(isFishing) return;
+  if(Math.abs(player.position.y - WATER_LEVEL) > 3) { showBanner("Too far from water"); return; }
+  isFishing = true; fishingState = "charging"; fishingCastTime = 0;
+  showBanner("Charging cast...");
 }
 
-// ----------------------
-// Fishing system
-// ----------------------
-let isFishing = false;
-let fishingState = "idle";
-let fishingCastTime = 0;
-let fishingTimer = 0;
-let currentBobber = null;
-let currentHookedFish = null;
+function castBobber(power){
+  if(currentBobber){ scene.remove(currentBobber); currentBobber=null; }
+  const bobber = new THREE.Mesh(bobberGeo, bobberMat.clone());
+  const dir = new THREE.Vector3(); camera.getWorldDirection(dir); dir.y=0; dir.normalize();
+  const distance = 5 + power*10;
+  const pos = player.position.clone().add(dir.multiplyScalar(distance));
+  pos.y = WATER_LEVEL + 0.3;
+  bobber.position.copy(pos);
+  scene.add(bobber);
+  currentBobber = bobber;
+}
 
-const bobberGeo = new THREE.SphereGeometry(0.3, 16, 16);
-const bobberMat = new THREE.MeshStandardMaterial({
-  color: 0xffb86c,
-  emissive: 0x331100
-});
-
-function baseVariantChanceForRarity(rarity) {
-  switch (rarity) {
+function baseVariantChanceForRarity(rarity){
+  switch(rarity){
     case RARITY.COMMON: return 0.01;
     case RARITY.UNCOMMON: return 0.008;
     case RARITY.RARE: return 0.005;
@@ -778,272 +329,299 @@ function baseVariantChanceForRarity(rarity) {
   }
 }
 
-function startFishing() {
-  if (isFishing) return;
-  if (Math.abs(player.position.y - WATER_LEVEL) > 3) return;
-  isFishing = true;
-  fishingState = "charging";
-  fishingCastTime = 0;
-}
-
-function castBobber(power) {
-  if (currentBobber) {
-    scene.remove(currentBobber);
-    currentBobber = null;
-  }
-  const bobber = new THREE.Mesh(bobberGeo, bobberMat.clone());
-  const dir = new THREE.Vector3();
-  camera.getWorldDirection(dir);
-  dir.y = 0;
-  dir.normalize();
-  const distance = 5 + power * 10;
-  const pos = player.position.clone().add(dir.multiplyScalar(distance));
-  pos.y = WATER_LEVEL + 0.3;
-  bobber.position.copy(pos);
-  bobber.castShadow = true;
-  scene.add(bobber);
-  currentBobber = bobber;
-}
-
-function pickFish(regionId) {
-  const table = getFishTable(regionId);
-  if (!table.length) return { name: "Nothing", rarity: RARITY.COMMON, variant: null };
-
-  const fish = table[Math.floor(Math.random() * table.length)];
+function pickFish(regionId){
+  const table = FISH_TABLES[regionId] || FISH_TABLES["ocean"];
+  const fish = table[Math.floor(Math.random()*table.length)];
   const baseChance = baseVariantChanceForRarity(fish.rarity);
   const totalChance = baseChance + (currentRod.variantBonus || 0);
   let variant = null;
-  if (Math.random() < totalChance) {
-    variant = VARIANTS[Math.floor(Math.random() * VARIANTS.length)];
-  }
-  return { ...fish, variant };
+  if(Math.random() < totalChance) variant = "variant";
+  return {...fish, variant};
 }
 
-function reelInFish() {
-  if (!currentHookedFish) return;
+function reelInFish(){
+  if(!currentHookedFish) return;
   discoveredFish.add(currentHookedFish.name);
-  showCatchAlert(currentHookedFish.rarity);
+  showBanner(`Caught: ${currentHookedFish.name} (${currentHookedFish.rarity})`);
+  addFishToInventory(currentHookedFish);
   endFishing();
 }
 
-function endFishing() {
-  isFishing = false;
-  fishingState = "idle";
-  fishingTimer = 0;
-  fishingCastTime = 0;
-  currentHookedFish = null;
-  if (currentBobber) {
-    scene.remove(currentBobber);
-    currentBobber = null;
-  }
+function endFishing(){
+  isFishing=false; fishingState="idle"; fishingTimer=0; fishingCastTime=0; currentHookedFish=null;
+  if(currentBobber){ scene.remove(currentBobber); currentBobber=null; }
 }
 
-function updateFishing(dt, time) {
-  if (!isFishing) return;
+// E toggles inventory, M toggles aquarium
+document.addEventListener("keydown", e=>{
+  if(e.code==="KeyE"){ toggleInventory(); }
+  if(e.code==="KeyM"){ toggleAquarium(); }
+  if(e.code==="KeyF"){ if(!isFishing) startFishing(); }
+});
 
-  if (fishingState === "charging") {
+// fishing update
+function updateFishing(dt, time){
+  if(!isFishing) return;
+  if(fishingState==="charging"){
     fishingCastTime += dt;
-    if (!keys["KeyE"]) {
-      const power = Math.min(1, fishingCastTime / 1.5);
+    if(!keys["KeyE"]){ // release E to cast
+      const power = Math.min(1, fishingCastTime/1.5);
       castBobber(power);
       fishingState = "waiting";
       fishingTimer = 0;
     }
-  } else if (fishingState === "waiting") {
+  } else if(fishingState==="waiting"){
     fishingTimer += dt;
-    const biteTime = 1.5 + Math.random() * 2.5;
-    if (fishingTimer > biteTime) {
+    const biteTime = 1.5 + Math.random()*2.5;
+    if(fishingTimer > biteTime){
       const regionId = getRegionIdAtPosition(player.position);
       const fish = pickFish(regionId);
       currentHookedFish = fish;
       fishingState = "hooked";
       fishingTimer = 0;
-      showCatchAlert(fish.rarity);
+      showBanner(`Something bit! ${fish.rarity.toUpperCase()}`, 2500);
+      setTimeout(()=> openMinigameForHook(), 250);
     }
-  } else if (fishingState === "hooked") {
+  } else if(fishingState==="hooked"){
     fishingTimer += dt;
-    if (fishingTimer > 4) {
-      endFishing();
-    }
+    if(fishingTimer > 8){ endFishing(); showBanner("Fish escaped"); }
   }
 
-  if (currentBobber) {
-    currentBobber.position.y = WATER_LEVEL + 0.3 + Math.sin(time * 4) * 0.1;
+  if(currentBobber){
+    currentBobber.position.y = WATER_LEVEL + 0.3 + Math.sin(time*4)*0.1;
   }
 }
 
-document.addEventListener("keydown", e => {
-  if (e.code === "KeyE") {
-    if (!isFishing) startFishing();
-    else if (fishingState === "hooked") reelInFish();
-  }
-});
-
-// ----------------------
-// Exotic spawns
-// ----------------------
-let exoticActive = false;
-let exoticTimer = 0;
-let exoticDuration = 0;
-let exoticPosition = new THREE.Vector3();
-
-function triggerExoticSpawn() {
-  exoticActive = true;
-  exoticDuration = 300 + Math.random() * 300;
-  exoticTimer = 0;
-  exoticPosition.set(
-    (Math.random() - 0.5) * OCEAN_SIZE * 0.6,
-    -50 - Math.random() * 150,
-    (Math.random() - 0.5) * OCEAN_SIZE * 0.6
-  );
-  showBanner("A Divine Fish has appeared in the ocean!");
-}
-
-function updateExotic(dt) {
-  if (!exoticActive) return;
-  exoticTimer += dt;
-  if (exoticTimer > exoticDuration) {
-    exoticActive = false;
-    showBanner("The Divine Fish has vanished...");
-  }
-}
-
-// ----------------------
-// Banner
-// ----------------------
-function showBanner(text) {
-  hudCenterBanner.textContent = text;
-  hudCenterBanner.style.opacity = "1";
-  setTimeout(() => {
-    hudCenterBanner.style.opacity = "0";
-  }, 10000);
-}
-
-// ----------------------
-// Fish radar (directional only)
-// ----------------------
-function getClosestFishDirection() {
+// -------------------- Fisch-style radar --------------------
+function getClosestFishDirection(){
   const regionId = getRegionIdAtPosition(player.position);
-  const table = getFishTable(regionId);
-
-  if (!table || table.length === 0) return null;
-
-  const fish = table[Math.floor(Math.random() * table.length)];
-  const angle = Math.random() * Math.PI * 2;
-
-  return {
-    fish,
-    angle
-  };
+  const table = FISH_TABLES[regionId];
+  const zones = FISH_SPAWN_ZONES[regionId];
+  if(!table || !zones) return null;
+  const fish = table[Math.floor(Math.random()*table.length)];
+  let closest=null, closestDist=Infinity;
+  for(const z of zones){
+    const d = player.position.distanceTo(z);
+    if(d < closestDist){ closestDist = d; closest = z; }
+  }
+  if(!closest) return null;
+  const dx = closest.x - player.position.x;
+  const dz = closest.z - player.position.z;
+  const angle = Math.atan2(dx, dz);
+  return { fish, angle };
 }
 
-function updateFishRadar() {
+function updateFishRadar(){
   const data = getClosestFishDirection();
-
-  if (!data) {
+  if(!data){
     radarArrow.style.opacity = "0.3";
     radarArrow.style.animation = "none";
     radarArrow.style.transform = "rotate(0rad)";
-    radarArrow.style.color = "#ffffff";
-    radarLabel.textContent = "No fish detected";
+    radarArrow.style.color = "#fff";
+    radarLabel.textContent = "No fish";
     return;
   }
-
   const { fish, angle } = data;
-
   radarArrow.style.opacity = "1";
   radarArrow.style.transform = `rotate(${angle}rad)`;
-  radarArrow.style.color = rarityColors[fish.rarity] || "#ffffff";
+  radarArrow.style.color = rarityColors[fish.rarity] || "#fff";
   radarLabel.textContent = fish.name;
-
-  if (
-    fish.rarity === RARITY.EPIC ||
-    fish.rarity === RARITY.LEGENDARY ||
-    fish.rarity === RARITY.MYTHIC ||
-    fish.rarity === RARITY.EXOTIC
-  ) {
+  if([RARITY.EPIC, RARITY.LEGENDARY, RARITY.MYTHIC, RARITY.EXOTIC].includes(fish.rarity)){
     radarArrow.style.animation = "pulse 0.6s infinite alternate";
+  } else radarArrow.style.animation = "none";
+}
+
+// -------------------- Hotbar toggle behavior --------------------
+let activePanelIndex = null;
+hotbarSlots.forEach(slot=>{
+  slot.addEventListener("click", ()=>{
+    const idx = parseInt(slot.dataset.slot,10);
+    togglePanel(idx);
+  });
+});
+
+function togglePanel(idx){
+  const panel = panelMap[idx];
+  if(!panel) return;
+  if(activePanelIndex === idx){
+    panel.style.display = "none";
+    panel.setAttribute("aria-hidden","true");
+    activePanelIndex = null;
+    hotbarSlots[idx].classList.remove("active");
   } else {
-    radarArrow.style.animation = "none";
+    if(activePanelIndex !== null){
+      const prev = panelMap[activePanelIndex];
+      if(prev){ prev.style.display = "none"; prev.setAttribute("aria-hidden","true"); hotbarSlots[activePanelIndex].classList.remove("active"); }
+    }
+    panel.style.display = "block";
+    panel.setAttribute("aria-hidden","false");
+    activePanelIndex = idx;
+    hotbarSlots[idx].classList.add("active");
   }
 }
 
-setInterval(updateFishRadar, 1500);
-
-// ----------------------
-// GUI / hotbar
-// ----------------------
-function hideAllPanels() {
-  [
-    panelRod,
-    panelToolBag,
-    panelBaitBag,
-    panelBestiary,
-    panelQuest,
-    panelTotems,
-    panelPotions,
-    panelRelic,
-    panelUtility
-  ]
-    .filter(Boolean)
-    .forEach(p => (p.style.display = "none"));
-}
-
-function showPanel(panel) {
-  if (!panel) return;
-  hideAllPanels();
-  panel.style.display = "block";
-}
-
-[panelRod, panelToolBag, panelBaitBag, panelBestiary, panelQuest, panelTotems, panelPotions, panelRelic, panelUtility]
-  .filter(Boolean)
-  .forEach(panel => {
-    panel.addEventListener("click", e => {
-      const rect = panel.getBoundingClientRect();
-      const xIconArea = rect.right - 24;
-      if (e.clientX >= xIconArea && e.clientY <= rect.top + 24) {
-        panel.style.display = "none";
-      }
-    });
-  });
-
-if (btnRod) btnRod.onclick = () => showPanel(panelRod);
-if (btnToolBag) btnToolBag.onclick = () => showPanel(panelToolBag);
-if (btnBaitBag) btnBaitBag.onclick = () => showPanel(panelBaitBag);
-if (btnBestiary) btnBestiary.onclick = () => showPanel(panelBestiary);
-if (btnQuest) btnQuest.onclick = () => showPanel(panelQuest);
-if (btnTotems) btnTotems.onclick = () => showPanel(panelTotems);
-if (btnPotions) btnPotions.onclick = () => showPanel(panelPotions);
-if (btnRelic) btnRelic.onclick = () => showPanel(panelRelic);
-if (btnUtility) btnUtility.onclick = () => showPanel(panelUtility);
-
-function setActiveHotbarSlot(index) {
-  hotbarSlots.forEach((slot, i) => {
-    if (i === index) slot.classList.add("active");
-    else slot.classList.remove("active");
-  });
-}
-
-setActiveHotbarSlot(0);
-
-document.addEventListener("keydown", e => {
-  if (e.code >= "Digit1" && e.code <= "Digit9") {
-    const idx = parseInt(e.code.slice(-1), 10) - 1;
-    selectedHotbarSlot = idx;
-    setActiveHotbarSlot(idx);
-    if (idx >= 0 && idx < RODS.length) {
-      currentRod = RODS[idx];
-      discoveredRods.add(currentRod.id);
-      updateRodAppearance();
-    }
+// close panels when clicking outside
+document.addEventListener("mousedown", e=>{
+  if(e.target.closest(".gui-panel")) return;
+  if(e.target.closest(".hotbar-slot")) return;
+  if(activePanelIndex !== null){
+    const panel = panelMap[activePanelIndex];
+    if(panel){ panel.style.display = "none"; panel.setAttribute("aria-hidden","true"); hotbarSlots[activePanelIndex].classList.remove("active"); }
+    activePanelIndex = null;
   }
 });
 
-// ----------------------
-// Bestiary population
-// ----------------------
-function rarityLabel(r) {
-  switch (r) {
+// close buttons
+document.querySelectorAll(".gui-panel .close").forEach(btn=>{
+  btn.addEventListener("click", e=>{
+    const panel = e.target.closest(".gui-panel");
+    panel.style.display = "none";
+    panel.setAttribute("aria-hidden","true");
+    const idx = Object.keys(panelMap).find(k => panelMap[k] === panel);
+    if(idx !== undefined) hotbarSlots[idx].classList.remove("active");
+  });
+});
+
+// -------------------- Inventory & Aquarium --------------------
+function toggleInventory(){
+  if(panelInventory.style.display === "block"){
+    panelInventory.style.display = "none"; panelInventory.setAttribute("aria-hidden","true");
+  } else {
+    panelInventory.style.display = "block"; panelInventory.setAttribute("aria-hidden","false");
+    populateInventory();
+  }
+}
+
+function toggleAquarium(){
+  if(panelAquarium.style.display === "block"){
+    panelAquarium.style.display = "none"; panelAquarium.setAttribute("aria-hidden","true");
+  } else {
+    panelAquarium.style.display = "block"; panelAquarium.setAttribute("aria-hidden","false");
+    populateAquariumUI();
+  }
+}
+
+function addFishToInventory(fish){
+  inventory.push(fish);
+  showBanner(`${fish.name} added to inventory`);
+  saveState();
+}
+
+function populateInventory(){
+  const el = document.getElementById("inventoryList");
+  el.innerHTML = "";
+  if(inventory.length === 0){
+    el.innerHTML = "<div class='small'>Inventory empty</div>";
+    return;
+  }
+  inventory.forEach((f, i)=>{
+    const row = document.createElement("div");
+    row.className = "entry";
+    const left = document.createElement("div");
+    left.innerHTML = `<div style="color:${rarityColors[f.rarity]||'#fff'}">${f.name}</div><div class="small">${f.lore}</div>`;
+    const right = document.createElement("div");
+    right.innerHTML = `<button data-i="${i}" class="btnPlace">Place</button> <button data-i="${i}" class="btnSell">Sell</button>`;
+    row.appendChild(left); row.appendChild(right);
+    el.appendChild(row);
+  });
+  el.querySelectorAll(".btnPlace").forEach(b=>{
+    b.addEventListener("click", e=>{
+      const i = parseInt(e.target.dataset.i,10);
+      placeFishInAquarium(i);
+    });
+  });
+  el.querySelectorAll(".btnSell").forEach(b=>{
+    b.addEventListener("click", e=>{
+      const i = parseInt(e.target.dataset.i,10);
+      sellFishFromInventory(i);
+    });
+  });
+}
+
+// Aquarium UI & logic
+function populateAquariumUI(){
+  aquariumSlotsEl.innerHTML = "";
+  for(let i=0;i<AQUARIUM_SLOT_COUNT;i++){
+    const slot = document.createElement("div");
+    slot.className = "aquarium-slot";
+    const fish = aquarium.slots[i];
+    if(fish){
+      slot.innerHTML = `<div style="text-align:center"><div style="color:${rarityColors[fish.rarity]||'#fff'}">${fish.name}</div><div class="small">+${fish.payoutPer30m}$ /30m</div></div>`;
+    } else {
+      slot.innerHTML = `<div class="small">Empty</div>`;
+    }
+    aquariumSlotsEl.appendChild(slot);
+  }
+  updateAquariumInfo();
+}
+
+function updateAquariumInfo(){
+  const next = getNextPayoutTime();
+  nextPayoutEl.textContent = `Next payout: ${formatTimeRemaining(next - Date.now())}`;
+  aquariumInfoEl.textContent = `Stored fish: ${aquarium.slots.filter(s=>s).length}/${AQUARIUM_SLOT_COUNT}`;
+}
+
+function placeFishInAquarium(inventoryIndex){
+  const emptyIndex = aquarium.slots.findIndex(s=>!s);
+  if(emptyIndex === -1){ showBanner("Aquarium full"); return; }
+  const fish = inventory.splice(inventoryIndex,1)[0];
+  const rarityBase = { common:2, uncommon:5, rare:12, epic:30, legendary:100, mythic:250, exotic:600 };
+  const base = rarityBase[fish.rarity] || 2;
+  const payoutPer30m = Math.round(base * (currentRod.power || 1));
+  aquarium.slots[emptyIndex] = { ...fish, payoutPer30m };
+  showBanner(`${fish.name} placed in aquarium`);
+  populateInventory();
+  populateAquariumUI();
+  saveState();
+}
+
+function sellFishFromInventory(i){
+  const fish = inventory.splice(i,1)[0];
+  const rarityBase = { common:2, uncommon:5, rare:12, epic:30, legendary:100, mythic:250, exotic:600 };
+  const base = rarityBase[fish.rarity] || 2;
+  const value = Math.round(base * (currentRod.power || 1) * 0.6);
+  playerCash += value;
+  showBanner(`Sold ${fish.name} for $${value}`);
+  populateInventory();
+  saveState();
+}
+
+function collectAquariumPayouts(online=true){
+  const multiplier = online ? 1.0 : 0.6;
+  let total = 0;
+  for(const f of aquarium.slots){
+    if(f) total += Math.round(f.payoutPer30m * multiplier);
+  }
+  if(total > 0){
+    playerCash += total;
+    showBanner(`Collected $${total} from aquarium (${online ? "online" : "offline"})`);
+    aquarium.lastPayout = Date.now();
+    saveState();
+  } else {
+    showBanner("No fish to collect");
+  }
+  updateAquariumInfo();
+}
+
+collectAquariumBtn.addEventListener("click", ()=> collectAquariumPayouts(true));
+
+function getNextPayoutTime(){
+  const interval = 30 * 60 * 1000;
+  const last = aquarium.lastPayout || Date.now();
+  return last + interval;
+}
+
+function formatTimeRemaining(ms){
+  if(ms <= 0) return "00:00";
+  const s = Math.floor(ms/1000);
+  const m = Math.floor(s/60);
+  const sec = s % 60;
+  return `${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`;
+}
+
+// -------------------- Bestiary & GUI population --------------------
+function rarityLabel(r){
+  switch(r){
     case RARITY.COMMON: return "Common";
     case RARITY.UNCOMMON: return "Uncommon";
     case RARITY.RARE: return "Rare";
@@ -1055,329 +633,317 @@ function rarityLabel(r) {
   }
 }
 
-function populateRodPanel() {
-  if (!rodList) return;
-  rodList.innerHTML = "";
-  RODS.forEach(rod => {
+function populateRods(){
+  rodListEl.innerHTML = "";
+  RODS.forEach((rod, i)=>{
     const div = document.createElement("div");
-    div.className = "bestiary-entry";
-    const name = document.createElement("div");
-    name.className = "bestiary-entry-name";
-    name.textContent = rod.name;
-    name.style.color = rarityColors[rod.rarity] || "#fff";
-    const meta = document.createElement("div");
-    meta.className = "bestiary-entry-meta";
-    meta.textContent = `${rarityLabel(rod.rarity)} • ${rod.desc} • ${rod.control}`;
-    div.appendChild(name);
-    div.appendChild(meta);
-    rodList.appendChild(div);
+    div.className = "entry";
+    const left = document.createElement("div");
+    left.innerHTML = `<div style="color:${rarityColors[rod.rarity]||'#fff'}">${rod.name}</div><div class="small">${rod.lore}</div>`;
+    const right = document.createElement("div");
+    right.innerHTML = `<div class="small">Power: ${rod.power.toFixed(2)} • Control: ${rod.control.toFixed(2)}</div><button data-i="${i}" class="btnEquip">Equip</button>`;
+    div.appendChild(left); div.appendChild(right);
+    rodListEl.appendChild(div);
   });
-}
-
-function populateBaitPanel() {
-  if (!baitList) return;
-  baitList.innerHTML = "";
-  BAITS.forEach(bait => {
-    const div = document.createElement("div");
-    div.className = "bestiary-entry";
-    const name = document.createElement("div");
-    name.className = "bestiary-entry-name";
-    name.textContent = bait.name;
-    name.style.color = rarityColors[bait.rarity] || "#fff";
-    const meta = document.createElement("div");
-    meta.className = "bestiary-entry-meta";
-    meta.textContent = `${rarityLabel(bait.rarity)} • ${bait.desc}`;
-    div.appendChild(name);
-    div.appendChild(meta);
-    baitList.appendChild(div);
-  });
-}
-
-function populateToolPanel() {
-  if (!toolList) return;
-  toolList.innerHTML = "";
-  TOOLS.forEach(tool => {
-    const div = document.createElement("div");
-    div.className = "bestiary-entry";
-    const name = document.createElement("div");
-    name.className = "bestiary-entry-name";
-    name.textContent = tool.name;
-    const meta = document.createElement("div");
-    meta.className = "bestiary-entry-meta";
-    meta.textContent = tool.desc;
-    div.appendChild(name);
-    div.appendChild(meta);
-    toolList.appendChild(div);
-  });
-}
-
-function populateQuestPanel() {
-  if (!questList) return;
-  questList.innerHTML = "";
-  const placeholder = document.createElement("div");
-  placeholder.className = "bestiary-entry-meta";
-  placeholder.textContent = "No quests yet. Future NPCs will offer tasks and storylines.";
-  questList.appendChild(placeholder);
-}
-
-function populateTotemPanel() {
-  if (!totemList) return;
-  totemList.innerHTML = "";
-  TOTEMS.forEach(totem => {
-    const div = document.createElement("div");
-    div.className = "bestiary-entry";
-    const name = document.createElement("div");
-    name.className = "bestiary-entry-name";
-    name.textContent = totem.name;
-    const meta = document.createElement("div");
-    meta.className = "bestiary-entry-meta";
-    meta.textContent = totem.desc;
-    div.appendChild(name);
-    div.appendChild(meta);
-    totemList.appendChild(div);
-  });
-}
-
-function populatePotionPanel() {
-  if (!potionList) return;
-  potionList.innerHTML = "";
-  POTIONS.forEach(potion => {
-    const div = document.createElement("div");
-    div.className = "bestiary-entry";
-    const name = document.createElement("div");
-    name.className = "bestiary-entry-name";
-    name.textContent = potion.name;
-    const meta = document.createElement("div");
-    meta.className = "bestiary-entry-meta";
-    meta.textContent = potion.desc;
-    div.appendChild(name);
-    div.appendChild(meta);
-    potionList.appendChild(div);
-  });
-}
-
-function populateRelicPanel() {
-  if (!relicInfo) return;
-  relicInfo.innerHTML = "";
-  const name = document.createElement("div");
-  name.className = "bestiary-entry-name";
-  name.textContent = RELIC.name;
-  const meta = document.createElement("div");
-  meta.className = "bestiary-entry-meta";
-  meta.textContent = RELIC.desc;
-  relicInfo.appendChild(name);
-  relicInfo.appendChild(meta);
-}
-
-function populateUtilityPanel() {
-  if (!utilityList) return;
-  utilityList.innerHTML = "";
-  UTILITIES.forEach(util => {
-    const div = document.createElement("div");
-    div.className = "bestiary-entry";
-    const name = document.createElement("div");
-    name.className = "bestiary-entry-name";
-    name.textContent = util.name;
-    const meta = document.createElement("div");
-    meta.className = "bestiary-entry-meta";
-    meta.textContent = util.desc;
-    div.appendChild(name);
-    div.appendChild(meta);
-    utilityList.appendChild(div);
-  });
-}
-
-function populateBestiaryFish() {
-  if (!bestiaryFish) return;
-  bestiaryFish.innerHTML = "";
-  const allRegions = Object.keys(FISH_TABLES);
-  allRegions.forEach(regionId => {
-    const regionHeader = document.createElement("div");
-    regionHeader.className = "bestiary-entry-meta";
-    regionHeader.style.marginTop = "4px";
-    regionHeader.textContent =
-      regionId === "ocean"
-        ? "Open Ocean"
-        : ISLANDS.find(i => i.id === regionId)?.name || regionId;
-    bestiaryFish.appendChild(regionHeader);
-
-    FISH_TABLES[regionId].forEach(fish => {
-      const div = document.createElement("div");
-      div.className = "bestiary-entry";
-      const name = document.createElement("div");
-      name.className = "bestiary-entry-name";
-      const discovered = discoveredFish.has(fish.name);
-      name.textContent = discovered ? fish.name : "???";
-      name.style.color = discovered ? (rarityColors[fish.rarity] || "#fff") : "#888";
-      const meta = document.createElement("div");
-      meta.className = "bestiary-entry-meta";
-      meta.textContent = discovered
-        ? `${rarityLabel(fish.rarity)} • ${fish.depth} depth`
-        : "Undiscovered";
-      div.appendChild(name);
-      div.appendChild(meta);
-      bestiaryFish.appendChild(div);
+  rodListEl.querySelectorAll(".btnEquip").forEach(b=>{
+    b.addEventListener("click", e=>{
+      const i = parseInt(e.target.dataset.i,10);
+      currentRod = RODS[i];
+      discoveredRods.add(currentRod.id);
+      showBanner(`Equipped ${currentRod.name}`);
+      updateRodAppearance();
+      populateBestiary();
+      saveState();
     });
   });
 }
 
-function populateBestiaryRods() {
-  if (!bestiaryRods) return;
-  bestiaryRods.innerHTML = "";
-  RODS.forEach(rod => {
-    const div = document.createElement("div");
-    div.className = "bestiary-entry";
-    const name = document.createElement("div");
-    name.className = "bestiary-entry-name";
-    const discovered = discoveredRods.has(rod.id);
-    name.textContent = discovered ? rod.name : "???";
-    name.style.color = discovered ? (rarityColors[rod.rarity] || "#fff") : "#888";
-    const meta = document.createElement("div");
-    meta.className = "bestiary-entry-meta";
-    meta.textContent = discovered
-      ? `${rarityLabel(rod.rarity)} • Variant bonus: ${(rod.variantBonus * 100).toFixed(1)}%`
-      : "Undiscovered";
-    div.appendChild(name);
-    div.appendChild(meta);
-    bestiaryRods.appendChild(div);
+function populateBag(){ bagListEl.innerHTML = "<div class='small'>Equipment bag placeholder</div>"; }
+function populateBait(){ baitListEl.innerHTML = "<div class='small'>Bait placeholder</div>"; }
+
+function populateBestiary(){
+  bestiaryFishEl.innerHTML = "";
+  Object.keys(FISH_TABLES).forEach(regionId=>{
+    const header = document.createElement("div");
+    header.textContent = regionId==="ocean"?"Open Ocean": ISLANDS.find(i=>i.id===regionId)?.name || regionId;
+    header.style.marginTop="8px"; header.style.color="#cfe8ff"; header.style.fontSize="13px";
+    bestiaryFishEl.appendChild(header);
+    FISH_TABLES[regionId].forEach(f=>{
+      const row = document.createElement("div"); row.className="entry";
+      const name = document.createElement("div"); name.textContent = discoveredFish.has(f.name)?f.name:"???"; name.style.color = discoveredFish.has(f.name)?(rarityColors[f.rarity]||"#fff"):"#7b8aa0";
+      const meta = document.createElement("div"); meta.textContent = discoveredFish.has(f.name)?`${rarityLabel(f.rarity)} • ${f.depth}`:"Undiscovered"; meta.className="meta";
+      row.appendChild(name); row.appendChild(meta); bestiaryFishEl.appendChild(row);
+    });
+  });
+  bestiaryRodsEl.innerHTML = "";
+  RODS.forEach(r=>{
+    const row = document.createElement("div"); row.className="entry";
+    const name = document.createElement("div"); name.textContent = discoveredRods.has(r.id)?r.name:"???"; name.style.color = discoveredRods.has(r.id)?(rarityColors[r.rarity]||"#fff"):"#7b8aa0";
+    const meta = document.createElement("div"); meta.textContent = discoveredRods.has(r.id)?`${rarityLabel(r.rarity)}`:"Undiscovered"; meta.className="meta";
+    row.appendChild(name); row.appendChild(meta); bestiaryRodsEl.appendChild(row);
+  });
+  bestiaryIslandsEl.innerHTML = "";
+  ISLANDS.forEach(i=>{
+    const row = document.createElement("div"); row.className="entry";
+    const name = document.createElement("div"); name.textContent = discoveredIslands.has(i.id)?i.name:"???"; name.style.color = discoveredIslands.has(i.id)?"#fff":"#7b8aa0";
+    const meta = document.createElement("div"); meta.textContent = discoveredIslands.has(i.id)?`Type: ${i.type}`:"Undiscovered"; meta.className="meta";
+    row.appendChild(name); row.appendChild(meta); bestiaryIslandsEl.appendChild(row);
   });
 }
 
-function populateBestiaryIslands() {
-  if (!bestiaryIslands) return;
-  bestiaryIslands.innerHTML = "";
-  ISLANDS.forEach(island => {
-    const div = document.createElement("div");
-    div.className = "bestiary-entry";
-    const name = document.createElement("div");
-    name.className = "bestiary-entry-name";
-    const discovered = discoveredIslands.has(island.id);
-    name.textContent = discovered ? island.name : "???";
-    name.style.color = discovered ? "#fff" : "#888";
-    const meta = document.createElement("div");
-    meta.className = "bestiary-entry-meta";
-    meta.textContent = discovered ? `Type: ${island.type}` : "Undiscovered";
-    div.appendChild(name);
-    div.appendChild(meta);
-    bestiaryIslands.appendChild(div);
+bestiaryTabs.forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    bestiaryTabs.forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    const tab = btn.dataset.tab;
+    document.querySelectorAll(".bestiary-section").forEach(s=>s.classList.remove("active"));
+    if(tab==="fish") bestiaryFishEl.classList.add("active");
+    if(tab==="rods") bestiaryRodsEl.classList.add("active");
+    if(tab==="islands") bestiaryIslandsEl.classList.add("active");
   });
+});
+
+// -------------------- Fishing minigame --------------------
+let minigameActive=false;
+let cursorX=0, cursorDir=1, cursorSpeed=220;
+let zoneLeft=0, zoneWidth=0;
+
+function openMinigameForHook(){
+  if(!currentHookedFish) return;
+  const rarityFactor = { common:0.28, uncommon:0.22, rare:0.18, epic:0.14, legendary:0.10, mythic:0.08, exotic:0.06 };
+  const base = rarityFactor[currentHookedFish.rarity] || 0.2;
+  const control = currentRod.control || 1.0;
+  const zonePct = Math.max(0.05, base * (1.0 / control));
+  const meterWidth = document.getElementById("minigameMeter").clientWidth;
+  zoneWidth = Math.max(28, Math.round(meterWidth * zonePct));
+  zoneLeft = Math.round((meterWidth - zoneWidth) * (0.2 + Math.random()*0.6));
+  minigameZone.style.width = zoneWidth + "px";
+  minigameZone.style.left = zoneLeft + "px";
+  cursorX = 0; cursorDir = 1;
+  cursorSpeed = 220 + Math.random()*120;
+  minigameCursor.style.left = cursorX + "px";
+  fishingMinigame.classList.remove("hidden");
+  fishingMinigame.setAttribute("aria-hidden","false");
+  minigameActive = true;
+  minigameHint.textContent = `Reel when the cursor is inside the green zone. Fish: ${currentHookedFish.name}`;
 }
 
-function initBestiaryTabs() {
-  if (!bestiaryTabs) return;
-  const buttons = Array.from(bestiaryTabs.querySelectorAll("button"));
-  const sections = {
-    fish: bestiaryFish,
-    rods: bestiaryRods,
-    islands: bestiaryIslands
-  };
+function closeMinigame(){
+  fishingMinigame.classList.add("hidden");
+  fishingMinigame.setAttribute("aria-hidden","true");
+  minigameActive = false;
+}
 
-  function activate(tab) {
-    buttons.forEach(btn => {
-      if (btn.dataset.tab === tab) btn.classList.add("active");
-      else btn.classList.remove("active");
-    });
-    Object.keys(sections).forEach(key => {
-      if (key === tab) sections[key].classList.add("active");
-      else sections[key].classList.remove("active");
-    });
+minigameReel.addEventListener("click", ()=>{
+  if(!minigameActive) return;
+  const meterWidth = document.getElementById("minigameMeter").clientWidth;
+  const cursorCenter = cursorX + 4;
+  const inZone = cursorCenter >= zoneLeft && cursorCenter <= (zoneLeft + zoneWidth);
+  const distToCenter = Math.abs((zoneLeft + zoneWidth/2) - cursorCenter);
+  const centerFactor = Math.max(0, 1 - (distToCenter / (meterWidth/2)));
+  const rodFactor = currentRod.power || 1;
+  const successChance = Math.min(0.99, 0.35 + centerFactor*0.6*rodFactor);
+  const roll = Math.random();
+  closeMinigame();
+  if(inZone && roll < successChance){
+    reelInFish();
+  } else {
+    showBanner("Missed! The fish got away...", 2000);
+    endFishing();
   }
+});
 
-  buttons.forEach(btn => {
-    btn.addEventListener("click", () => {
-      const tab = btn.dataset.tab;
-      if (tab === "fish") populateBestiaryFish();
-      if (tab === "rods") populateBestiaryRods();
-      if (tab === "islands") populateBestiaryIslands();
-      activate(tab);
-    });
+minigameCancel.addEventListener("click", ()=>{
+  closeMinigame();
+  endFishing();
+});
+
+function updateMinigame(dt){
+  if(!minigameActive) return;
+  const meter = document.getElementById("minigameMeter");
+  const maxX = meter.clientWidth - 8;
+  cursorX += cursorDir * cursorSpeed * dt;
+  if(cursorX < 0){ cursorX = 0; cursorDir = 1; }
+  if(cursorX > maxX){ cursorX = maxX; cursorDir = -1; }
+  minigameCursor.style.left = cursorX + "px";
+}
+
+// -------------------- Rod mesh (first-person) --------------------
+let rodMesh = null;
+function createRodMesh(){
+  const rodGeo = new THREE.CylinderGeometry(0.06,0.08,5,10);
+  const rodMat = new THREE.MeshStandardMaterial({ color: currentRod.color, metalness:0.2, roughness:0.4 });
+  const handleGeo = new THREE.CylinderGeometry(0.18,0.2,1.6,10);
+  const handleMat = new THREE.MeshStandardMaterial({ color:0x4e342e, roughness:0.8 });
+  const reelBodyGeo = new THREE.CylinderGeometry(0.4,0.4,0.4,16);
+  const reelBodyMat = new THREE.MeshStandardMaterial({ color:0x212121, metalness:0.6, roughness:0.3 });
+  const reelArmGeo = new THREE.BoxGeometry(0.1,0.6,0.1);
+  const reelArmMat = new THREE.MeshStandardMaterial({ color:0xbdbdbd, metalness:0.8, roughness:0.2 });
+  const lineGeo = new THREE.CylinderGeometry(0.01,0.01,4,6);
+  const lineMat = new THREE.MeshBasicMaterial({ color:0xe0f7fa });
+
+  const rod = new THREE.Mesh(rodGeo, rodMat);
+  const handle = new THREE.Mesh(handleGeo, handleMat);
+  const reelBody = new THREE.Mesh(reelBodyGeo, reelBodyMat);
+  const reelArm = new THREE.Mesh(reelArmGeo, reelArmMat);
+  const line = new THREE.Mesh(lineGeo, lineMat);
+
+  const group = new THREE.Group();
+  rod.position.y = 2.4; handle.position.y = 0.6;
+  reelBody.position.set(-0.25,1.0,0.0); reelBody.rotation.z = Math.PI/2;
+  reelArm.position.set(-0.25,1.5,0.0); line.position.set(0,4.5,0.4); line.rotation.x = Math.PI/2;
+
+  group.add(rod); group.add(handle); group.add(reelBody); group.add(reelArm); group.add(line);
+  group.position.set(0.7,1.4,0.6); group.rotation.z = -Math.PI/4; group.rotation.y = Math.PI/10;
+
+  cameraPivot.add(group);
+  rodMesh = group;
+}
+
+function updateRodAppearance(){
+  if(!rodMesh) return;
+  rodMesh.traverse(child=>{
+    if(child.isMesh && child.geometry instanceof THREE.CylinderGeometry){
+      if(Math.abs(child.geometry.parameters.height - 5) < 0.01){
+        child.material.color.setHex(currentRod.color);
+      }
+    }
   });
-
-  populateBestiaryFish();
-  populateBestiaryRods();
-  populateBestiaryIslands();
-  activate("fish");
 }
 
-// ----------------------
-// Day-night cycle
-// ----------------------
-let dayTime = 0; // 0..1
-
-function updateDayNight(dt) {
-  const cycleLength = 240;
-  dayTime = (dayTime + dt / cycleLength) % 1;
-
-  const t = Math.sin(dayTime * Math.PI * 2) * 0.5 + 0.5;
-
-  const skyColor = new THREE.Color().lerpColors(nightSkyColor, daySkyColor, t);
-  const fogColor = new THREE.Color().lerpColors(nightFogColor, dayFogColor, t);
-
-  renderer.setClearColor(skyColor);
-  scene.fog.color.copy(fogColor);
-
-  const sunIntensity = 0.3 + t * 0.9;
-  sun.intensity = sunIntensity;
-  hemi.intensity = 0.4 + t * 0.6;
-
-  sun.position.set(
-    Math.cos(dayTime * Math.PI * 2) * 200,
-    150 + Math.sin(dayTime * Math.PI * 2) * 100,
-    80
-  );
+// -------------------- Utility: region detection --------------------
+function getRegionIdAtPosition(pos){
+  let closest=null, closestDist=Infinity;
+  for(const isl of ISLANDS){
+    const ipos = new THREE.Vector3(...isl.position);
+    const d = pos.distanceTo(ipos);
+    if(d < closestDist){ closestDist = d; closest = isl; }
+  }
+  if(!closest) return "ocean";
+  if(closestDist < closest.radius*2.5){
+    if(!discoveredIslands.has(closest.id)){ discoveredIslands.add(closest.id); showBanner(`Discovered: ${closest.name}`); saveState(); }
+    return closest.id;
+  }
+  return "ocean";
 }
 
-// ----------------------
-// Main loop
-// ----------------------
+// -------------------- Water animation --------------------
+function updateWater(time){
+  const pos = water.geometry.attributes.position;
+  for(let i=0;i<pos.count;i++){
+    const x = pos.getX(i), z = pos.getZ(i);
+    const wave = Math.sin((x + time*20)*0.002)*0.3 + Math.cos((z + time*15)*0.002)*0.3 + Math.sin((x+z+time*10)*0.0015)*0.2;
+    pos.setY(i, wave);
+  }
+  pos.needsUpdate = true;
+  water.geometry.computeVertexNormals();
+}
+
+// -------------------- Persistence (save/load + offline payouts) --------------------
+function saveState(){
+  const state = {
+    playerCash,
+    inventory,
+    aquarium,
+    discoveredFish: Array.from(discoveredFish),
+    discoveredRods: Array.from(discoveredRods),
+    discoveredIslands: Array.from(discoveredIslands),
+    currentRodId: currentRod.id,
+    lastSave: Date.now()
+  };
+  localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+}
+
+function loadState(){
+  const raw = localStorage.getItem(SAVE_KEY);
+  if(!raw) return;
+  try{
+    const s = JSON.parse(raw);
+    playerCash = s.playerCash || 0;
+    inventory = s.inventory || [];
+    aquarium = s.aquarium || aquarium;
+    discoveredFish = new Set(s.discoveredFish || []);
+    discoveredRods = new Set(s.discoveredRods || ["driftwood"]);
+    discoveredIslands = new Set(s.discoveredIslands || ["harbor"]);
+    const rodId = s.currentRodId || "driftwood";
+    const rod = RODS.find(r=>r.id===rodId);
+    if(rod) currentRod = rod;
+
+    // Offline payouts: calculate how many 30-minute intervals passed since lastPayout
+    const now = Date.now();
+    const last = aquarium.lastPayout || s.lastSave || now;
+    const interval = 30 * 60 * 1000;
+    const elapsed = Math.max(0, now - last);
+    const intervals = Math.floor(elapsed / interval);
+    if(intervals > 0){
+      // offline multiplier
+      const offlineMultiplier = 0.6;
+      let total = 0;
+      for(const f of aquarium.slots){
+        if(f) total += Math.round(f.payoutPer30m * offlineMultiplier * intervals);
+      }
+      if(total > 0){
+        playerCash += total;
+        showBanner(`Offline aquarium payout: $${total} (for ${intervals} intervals)`);
+      }
+      aquarium.lastPayout = last + intervals * interval;
+    }
+  }catch(e){ console.warn("Failed to load save", e); }
+}
+
+// -------------------- Main loop --------------------
 let lastTime = performance.now();
-let exoticSpawnTimer = 0;
+let radarTimer = 0;
+let payoutTimer = 0;
 
-function loop(now) {
-  const dt = (now - lastTime) / 1000;
+function loop(now){
+  const dt = (now - lastTime)/1000;
   lastTime = now;
 
   updateMovement(dt);
-  updateHUD();
-  updateFishing(dt, now / 1000);
-  updateExotic(dt);
-  updateWater(now / 1000);
-  updateDayNight(dt);
+  updateFishing(dt, now/1000);
+  updateMinigame(dt);
+  updateWater(now/1000);
 
-  exoticSpawnTimer += dt;
-  if (exoticSpawnTimer > 120 && !exoticActive) {
-    exoticSpawnTimer = 0;
-    triggerExoticSpawn();
+  radarTimer += dt;
+  if(radarTimer > 1.5){ radarTimer = 0; updateFishRadar(); }
+
+  payoutTimer += dt;
+  if(payoutTimer > 1){ // check every second
+    payoutTimer = 0;
+    const next = getNextPayoutTime();
+    if(Date.now() >= next){
+      collectAquariumPayouts(true);
+    }
+    if(panelAquarium.style.display === "block") updateAquariumInfo();
   }
+
+  // HUD updates
+  const pos = player.position;
+  hudGPS.textContent = `X: ${pos.x.toFixed(0)} | Y: ${pos.y.toFixed(0)} | Z: ${pos.z.toFixed(0)}`;
+  const depth = Math.max(0, WATER_LEVEL - pos.y);
+  hudDepth.textContent = `Depth: ${depth.toFixed(1)}m`;
+  const regionId = getRegionIdAtPosition(player.position);
+  const island = ISLANDS.find(i=>i.id===regionId);
+  hudRegion.textContent = `Region: ${island?island.name:"Open Ocean"}`;
 
   renderer.render(scene, camera);
   requestAnimationFrame(loop);
 }
 
-// ----------------------
-// Init
-// ----------------------
-function init() {
+// -------------------- Init --------------------
+function init(){
+  loadState();
   buildIslands();
-  createControlSign();
   createRodMesh();
-
-  populateRodPanel();
-  populateBaitPanel();
-  populateToolPanel();
-  populateQuestPanel();
-  populateTotemPanel();
-  populatePotionPanel();
-  populateRelicPanel();
-  populateUtilityPanel();
-  initBestiaryTabs();
-
-  window.addEventListener("resize", () => {
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-  });
-
+  populateRods();
+  populateBag();
+  populateBait();
+  populateBestiary();
+  populateInventory();
+  populateAquariumUI();
+  updateRodAppearance();
+  window.addEventListener("resize", ()=>{ renderer.setSize(window.innerWidth, window.innerHeight); camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); });
   requestAnimationFrame(loop);
 }
 
